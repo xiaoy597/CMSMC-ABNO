@@ -2,12 +2,14 @@
 use strict;
 use warnings FATAL => 'all';
 
-open FH, "c:/users/xiaoy/test.sql" or die "Can not open file.";
+open(FH, "c:/users/xiaoy/test.sql") || die("Can not open file.");
 my $file_content = "";
 
 while(<FH>){
     $file_content = $file_content . $_
 }
+
+close FH;
 
 my %PARAM = ();
 
@@ -24,4 +26,11 @@ my $PASSWD = "CMSS2017";
 my $result = eval("return \"" . $file_content . "\"");
 
 print $result;
+
+open(BTEQ, "| bteq") || die("Can not start bteq.");
+
+print BTEQ $result;
+
+close BTEQ;
+
 
