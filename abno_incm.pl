@@ -62,6 +62,7 @@ sub prepare_obj_temp_table() {
         $PARAM{'LOAD_DATA_FILE'} = $JOB_PARAM{'obj_cntnt'};
 
         run_fastload("load-list.sql", %PARAM);
+        run_update("prepare-obj-from-list.sql", %PARAM);
     }
 }
 
@@ -131,7 +132,7 @@ sub run_fastload() {
 
     my $complete_script = eval("return \"$template_script\"");
 
-    print "After process ...\n$complete_script\n";
+#    print "After process ...\n$complete_script\n";
 
     open(my $complete_script_fh, ">$template.fld") or die "Can not open $template.fld";
     print $complete_script_fh $complete_script;
@@ -141,7 +142,7 @@ sub run_fastload() {
 
     sleep(0.1);
 
-    my $ret = system("fastload < $template.bteq");
+    my $ret = system("fastload < $template.fld");
 
     die "Failed to execute FASTLOAD script $template.fld." if ($ret != 0);
 
