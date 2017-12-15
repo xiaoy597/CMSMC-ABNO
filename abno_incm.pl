@@ -6,6 +6,21 @@ use Time::localtime;
 
 die "Batch number is not specified." if (!defined($ARGV[0]));
 
+die "CMSS_HOME is not defined." if (!defined($ARGV[1]) and !defined($ENV{'CMSS_HOME'}));
+
+my $CMSS_HOME;
+
+if (defined($ARGV[1])) {
+    $CMSS_HOME = $ARGV[1];
+}
+else {
+    $CMSS_HOME = $ENV{'CMSS_HOME'}
+}
+
+my $WORK_DIR = "$CMSS_HOME/tmp";
+my $SCRIPT_DIR = "$CMSS_HOME/sql-template";
+my $LOG_DIR = "$CMSS_HOME/logs";
+
 my %MAIN_PARAM = ();
 my %JOB_PARAM = ();
 
@@ -17,9 +32,6 @@ $MAIN_PARAM{'TEMP_DB'} = 'CMSSTEMP';
 $MAIN_PARAM{'LOAD_TEMPLATE_TBL'} = 'abno_fastld';
 $MAIN_PARAM{"BATCH_NBR"} = $ARGV[0];
 
-my $WORK_DIR = "$ENV{'CMSS_HOME'}/tmp";
-my $SCRIPT_DIR = "$ENV{'CMSS_HOME'}/sql-template";
-my $LOG_DIR = "$ENV{'CMSS_HOME'}/logs";
 my $LOG_FILE = "$LOG_DIR/abno_$MAIN_PARAM{'BATCH_NBR'}.log";
 
 if (!-e $WORK_DIR) {
@@ -38,31 +50,81 @@ sub main {
     # 获得异常收益计算作业参数
     get_job_info($MAIN_PARAM{'BATCH_NBR'});
 
-    # 初始化投资标的临时表
-    prepare_obj_temp_table();
+    # 初始化投资标的参数表
+    prepare_abno_obj_table();
+
+    # 初始化投资者参数表
+    prepare_abno_invst_table();
+
+    # 执行异常收益计算
+    perform_abno_calc();
+
 }
 
-sub prepare_obj_temp_table() {
+sub perform_abno_calc() {
     my %PARAM = %MAIN_PARAM;
     foreach my $k (keys %JOB_PARAM) {
         $PARAM{$k} = $JOB_PARAM{$k};
     }
 
-    if ($JOB_PARAM{'obj_type'} eq "1"){
-        if ($JOB_PARAM{'obj_cntnt'} eq "11") {  # A股
+    if (index($JOB_PARAM{'sec_exch_cde'}, "0") >= 0){
+        print "\nAbnormal income calculation for SSE securities ...\n";
+        run_update("abno_calc_sse.sql", %PARAM);
+    }
+
+    if (index($JOB_PARAM{'sec_exch_cde'}, "1") >= 0){
+        print "\nAbnormal income calculation for SZSE securities ...\n";
+#        run_update("abno_calc_szse.sql", %PARAM);
+    }
+
+    # Produce final result.
+    # ... ...
+
+}
+
+sub prepare_abno_invst_table() {
+    my %PARAM = %MAIN_PARAM;
+    foreach my $k (keys %JOB_PARAM) {
+        $PARAM{$k} = $JOB_PARAM{$k};
+    }
+
+    if ($JOB_PARAM{'invst_sort'} eq "1" or $JOB_PARAM{'invst_sort'} eq "2") {
+        $PARAM{'LOAD_TBL'} = "abno_fastld_$PARAM{'abno_incm_calc_btch'}";
+        $PARAM{'LOAD_ERR_TBL_1'} = "abno_fastld_$PARAM{'abno_incm_calc_btch'}_err1";
+        $PARAM{'LOAD_ERR_TBL_2'} = "abno_fastld_$PARAM{'abno_incm_calc_btch'}_err2";
+        $PARAM{'LOAD_DATA_FILE'} = $JOB_PARAM{'invst_cntnt'};
+
+        run_fastload("load-file.sql", %PARAM);
+        run_update("prepare-invst-from-file.sql", %PARAM);
+    }
+    else {
+        run_update("prepare-invst-per-type.sql", %PARAM);
+    }
+}
+
+sub prepare_abno_obj_table() {
+    my %PARAM = %MAIN_PARAM;
+    foreach my $k (keys %JOB_PARAM) {
+        $PARAM{$k} = $JOB_PARAM{$k};
+    }
+
+    if ($JOB_PARAM{'obj_type'} eq "1") {
+        if ($JOB_PARAM{'obj_cntnt'} eq "11") {# A股
             run_update("prepare-obj-a.sql", %PARAM);
-        } else {                                # 主板，中小板，创业板
+        }
+        else {# 主板，中小板，创业板
             run_update("prepare-obj-mkt-lvl.sql", %PARAM);
         }
-    }else{
+    }
+    else {
 
         $PARAM{'LOAD_TBL'} = "abno_fastld_$PARAM{'abno_incm_calc_btch'}";
         $PARAM{'LOAD_ERR_TBL_1'} = "abno_fastld_$PARAM{'abno_incm_calc_btch'}_err1";
         $PARAM{'LOAD_ERR_TBL_2'} = "abno_fastld_$PARAM{'abno_incm_calc_btch'}_err2";
         $PARAM{'LOAD_DATA_FILE'} = $JOB_PARAM{'obj_cntnt'};
 
-        run_fastload("load-list.sql", %PARAM);
-        run_update("prepare-obj-from-list.sql", %PARAM);
+        run_fastload("load-file.sql", %PARAM);
+        run_update("prepare-obj-from-file.sql", %PARAM);
     }
 }
 
@@ -87,6 +149,7 @@ sub get_job_info() {
     $JOB_PARAM{'obj_cntnt'} = $obj_cntnt;
     $JOB_PARAM{'invst_sort'} = $invst_sort;
     $JOB_PARAM{'invst_cntnt'} = $invst_cntnt;
+    $JOB_PARAM{'invst_cntnt_quot'} = quote_values($invst_cntnt);
     $JOB_PARAM{'sec_exch_cde'} = ($sec_exch_cde eq "3") ? "0,1" : $sec_exch_cde;
     $JOB_PARAM{'sec_exch_cde_quot'} = quote_values($JOB_PARAM{'sec_exch_cde'});
     $JOB_PARAM{'cmsn_abtm'} = $cmsn_abtm;
@@ -109,12 +172,17 @@ sub quote_values() {
 }
 
 sub openLog {
-    open(STDERR, ">>$LOG_FILE")
-        and open(STDOUT, ">$LOG_FILE")
-        or die "Can not redirect STDOUT and STDERR to $LOG_FILE";
 
     my $START_TIME = getTime("yyyy-mm-dd hh:mi:ss");
-    print "Begin to write log file at $START_TIME\n";
+
+    open(STDOUT, ">$LOG_FILE")
+        or die "Can not redirect STDOUT to $LOG_FILE";
+    print "Standard output goes to this file at $START_TIME\n";
+
+    open(STDERR, ">&STDOUT")
+        or die "Can not redirect STDERR to $LOG_FILE";
+    print STDERR "Standard error goes to this file at $START_TIME\n";
+
 }
 
 sub run_fastload() {
@@ -132,7 +200,7 @@ sub run_fastload() {
 
     my $complete_script = eval("return \"$template_script\"");
 
-#    print "After process ...\n$complete_script\n";
+    #    print "After process ...\n$complete_script\n";
 
     open(my $complete_script_fh, ">$template.fld") or die "Can not open $template.fld";
     print $complete_script_fh $complete_script;
@@ -165,7 +233,7 @@ sub run_query() {
 
     my $complete_script = eval("return \"$template_script\"");
 
-#    print "After process ...\n$complete_script\n";
+    #    print "After process ...\n$complete_script\n";
 
     open(my $complete_script_fh, ">$template.bteq") or die "Can not open $template.bteq";
     print $complete_script_fh $complete_script;
@@ -211,7 +279,7 @@ sub run_update() {
 
     my $complete_script = eval("return \"$template_script\"");
 
-#    print "After process ...\n$complete_script\n";
+    #    print "After process ...\n$complete_script\n";
 
     open(my $complete_script_fh, ">$template.bteq") or die "Can not open $template.bteq";
     print $complete_script_fh $complete_script;
