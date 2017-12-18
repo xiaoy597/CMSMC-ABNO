@@ -80,6 +80,8 @@ FROM NSOVIEW.CSDC_H_CLR_STM_DTL t1,
       AND E_DATE > t1.TRAD_DATE
       AND s02.ABNO_INCM_CALC_BTCH = '$PARAM{'abno_incm_calc_btch'}'
       AND s01.SEC_CDE = s02.SEC_CDE
+        AND SEC_REG_STS_SORT NOT IN ('2','5')            --证券登记状态类别 2：退市、5：废弃
+        AND s01.MKT_SORT = '0'
     )
   AND t1.SHDR_ACCT NOT IN ('B880810718','B880859746','B880969127','B880969135')  
   AND t1.SETL_VOL <> 0
@@ -190,6 +192,8 @@ WHERE t2.SEC_CDE1 IN
       AND E_DATE > t1.TRAD_DATE
       AND s02.ABNO_INCM_CALC_BTCH = '$PARAM{'abno_incm_calc_btch'}'
       AND s01.SEC_CDE = s02.SEC_CDE
+        AND SEC_REG_STS_SORT NOT IN ('2','5')            --证券登记状态类别 2：退市、5：废弃
+        AND s01.MKT_SORT = '0'
     )
 group by 1,2,3
 ) RSLT
@@ -249,7 +253,10 @@ from (
                           WHERE S_DATE <= a.TRANS_DATE
                           AND E_DATE > a.TRANS_DATE
                           AND s02.ABNO_INCM_CALC_BTCH = '$PARAM{'abno_incm_calc_btch'}'
-                          AND s01.SEC_CDE = s02.SEC_CDE)
+                          AND s01.SEC_CDE = s02.SEC_CDE
+                          AND SEC_REG_STS_SORT NOT IN ('2','5')            --证券登记状态类别 2：退市、5：废弃
+                             AND s01.MKT_SORT = '0'
+                          )
     and a.TRANS_DATE = b.TRAD_DATE
     and a.SEC_CDE = b.SEC_CDE
     and a.ata = c.sec_acct
@@ -281,7 +288,10 @@ from (
                           WHERE S_DATE <= b.TRANS_DATE
                           AND E_DATE > b.TRANS_DATE
                            AND s02.ABNO_INCM_CALC_BTCH = '$PARAM{'abno_incm_calc_btch'}'
-                          AND s01.SEC_CDE = s02.SEC_CDE)
+                          AND s01.SEC_CDE = s02.SEC_CDE
+                            AND SEC_REG_STS_SORT NOT IN ('2','5')            --证券登记状态类别 2：退市、5：废弃
+                            AND s01.MKT_SORT = '0'
+                          )
     and b.TRANS_DATE = a.TRAD_DATE
     and b.SEC_CDE = a.SEC_CDE
     and b.in_acct = c.sec_acct
@@ -352,7 +362,10 @@ INNER JOIN
                           WHERE S_DATE <= t2.LIST_LAST_DATE
                           AND E_DATE > t2.LIST_LAST_DATE
                           AND s02.ABNO_INCM_CALC_BTCH = '$PARAM{'abno_incm_calc_btch'}'
-                          AND s01.SEC_CDE = s02.SEC_CDE)
+                          AND s01.SEC_CDE = s02.SEC_CDE
+                          AND SEC_REG_STS_SORT NOT IN ('2','5')            --证券登记状态类别 2：退市、5：废弃
+                          AND s01.MKT_SORT = '0'
+                          )
 GROUP BY 1,2,3,4
 ) RSLT
 GROUP BY 1,2,3,4,5,10;
@@ -425,7 +438,10 @@ where  t2.STK_CDE IN
     WHERE S_DATE <= t1.TRAD_DATE
     AND E_DATE > t1.TRAD_DATE
     AND s02.ABNO_INCM_CALC_BTCH = '$PARAM{'abno_incm_calc_btch'}'
-    AND s01.SEC_CDE = s02.SEC_CDE)
+    AND s01.SEC_CDE = s02.SEC_CDE
+    AND SEC_REG_STS_SORT NOT IN ('2','5')            --证券登记状态类别 2：退市、5：废弃
+    AND s01.MKT_SORT = '0'
+    )
 ) RSLT
 GROUP BY 1,2,3,4,5,10;
 
@@ -473,7 +489,10 @@ WHERE a.CAP_TYPE ='XL'
     WHERE S_DATE <= a.TRAD_DATE
     AND E_DATE > a.TRAD_DATE
     AND s02.ABNO_INCM_CALC_BTCH = '$PARAM{'abno_incm_calc_btch'}'
-    AND s01.SEC_CDE = s02.SEC_CDE)
+    AND s01.SEC_CDE = s02.SEC_CDE
+    AND SEC_REG_STS_SORT NOT IN ('2','5')            --证券登记状态类别 2：退市、5：废弃
+    AND s01.MKT_SORT = '0'
+    )
   AND A.TRAD_DATE = B.TRAD_DATE
   AND A.SEC_CDE = B.SEC_CDE
   AND A.SHDR_ACCT = C.SEC_ACCT
@@ -530,7 +549,10 @@ FROM
         WHERE S_DATE <= a.TRAD_DATE
         AND E_DATE > a.TRAD_DATE
         AND s02.ABNO_INCM_CALC_BTCH = '$PARAM{'abno_incm_calc_btch'}'
-        AND s01.SEC_CDE = s02.SEC_CDE)
+        AND s01.SEC_CDE = s02.SEC_CDE
+        AND SEC_REG_STS_SORT NOT IN ('2','5')            --证券登记状态类别 2：退市、5：废弃
+        AND s01.MKT_SORT = '0'
+        )
 ) t1
 INNER JOIN 
   (
@@ -597,7 +619,10 @@ FROM
           WHERE S_DATE <= t01.reg_date
           AND E_DATE > t01.reg_date
           AND s02.ABNO_INCM_CALC_BTCH = '$PARAM{'abno_incm_calc_btch'}'
-          AND s01.SEC_CDE = s02.SEC_CDE)
+          AND s01.SEC_CDE = s02.SEC_CDE
+        AND SEC_REG_STS_SORT NOT IN ('2','5')            --证券登记状态类别 2：退市、5：废弃
+        AND s01.MKT_SORT = '0'
+          )
     AND t01.RMAK_DESC NOT LIKE ('%对价%')
     AND t01.reg_date BETWEEN cast('$PARAM{'s_date'}' AS DATE format 'YYYYMMDD') 
                        AND cast('$PARAM{'e_date'}' as DATE format 'YYYYMMDD')
@@ -674,6 +699,7 @@ INNER JOIN
                   WHERE S_DATE <= t1.reg_date
                   AND E_DATE > t1.reg_date
                   AND SEC_REG_STS_SORT NOT IN ('2','5')            --证券登记状态类别 2：退市、5：废弃
+                  AND s01.MKT_SORT = '0'
                   AND s02.ABNO_INCM_CALC_BTCH = '$PARAM{'abno_incm_calc_btch'}'
                   AND s01.SEC_CDE = s02.SEC_CDE)
                 AND t1.EQUT_TYPE IN ('HL')
@@ -698,6 +724,7 @@ INNER JOIN
                   WHERE S_DATE <= t1.reg_date
                   AND E_DATE > t1.reg_date
                   AND SEC_REG_STS_SORT NOT IN ('2','5')            --证券登记状态类别 2：退市、5：废弃
+                  AND s01.MKT_SORT = '0'
                   AND s02.ABNO_INCM_CALC_BTCH = '$PARAM{'abno_incm_calc_btch'}'
                   AND s01.SEC_CDE = s02.SEC_CDE)
                 AND t1.REG_SORT IN ('SG')
@@ -749,13 +776,13 @@ SELECT
        SELECT PRMT_VAL AS SEC_ACCT 
        FROM $PARAM{'CMSSDB'}.ABNO_INCM_CALC_INVST
        WHERE ABNO_INCM_CALC_BTCH = '$PARAM{'abno_incm_calc_btch'}' AND PRMT_TYPE = '1'
-     ) t3	
+     ) t3    
     where TRANS_TYPE='00Y' 
-	  and CAP_TYPE='GZ' 
-	  and TRAD_DIRC='S'
+      and CAP_TYPE='GZ' 
+      and TRAD_DIRC='S'
       and TRAD_DATE BETWEEN cast('$PARAM{'s_date'}' AS DATE format 'YYYYMMDD') 
                        AND cast('$PARAM{'e_date'}' as DATE format 'YYYYMMDD') 
-	  and t1.shdr_acct = t3.sec_acct
+      and t1.shdr_acct = t3.sec_acct
   )  a
   inner join 
  (
@@ -767,10 +794,10 @@ SELECT
      ) t3
    where TRANS_TYPE='00Y' 
      and CAP_TYPE='PT' 
-	 and TRAD_DIRC='B' 
+     and TRAD_DIRC='B' 
      and TRAD_DATE BETWEEN cast('$PARAM{'s_date'}' AS DATE format 'YYYYMMDD') 
                        AND cast('$PARAM{'e_date'}' as DATE format 'YYYYMMDD') 
-	 and t1.shdr_acct = t3.sec_acct
+     and t1.shdr_acct = t3.sec_acct
  ) b
 on  a.TRAD_DATE =b.TRAD_DATE
 and a.TRAD_NBR =b.TRAD_NBR
@@ -783,7 +810,8 @@ WHERE b.SEC_CDE IN
         AND E_DATE > a.trad_date
         AND SEC_REG_STS_SORT NOT IN ('2','5')            --证券登记状态类别 2：退市、5：废弃
         AND s02.ABNO_INCM_CALC_BTCH = '$PARAM{'abno_incm_calc_btch'}'
-        AND s01.SEC_CDE = s02.SEC_CDE)
+        AND s01.SEC_CDE = s02.SEC_CDE
+        AND s01.MKT_SORT = '0')
 group  by 1,2,3
 ) RSLT
 GROUP BY 1,2,3,4,5,10;
@@ -819,25 +847,27 @@ FROM
        FROM $PARAM{'CMSSDB'}.ABNO_INCM_CALC_INVST
        WHERE ABNO_INCM_CALC_BTCH = '$PARAM{'abno_incm_calc_btch'}' AND PRMT_TYPE = '1'
      ) t3,
-	 CMSSVIEW.SEC_QUOT t4
+     CMSSVIEW.SEC_QUOT t4
 WHERE
     cap_type = 'PT'
-	AND k1.shdr_acct = t3.sec_acct
+    AND k1.shdr_acct = t3.sec_acct
     AND trans_type IN ('007') --ETF申购赎回
     AND trans_vol <> 0 --AND tran_prc <> 0
     AND k1.trad_date BETWEEN cast('$PARAM{'s_date'}' AS DATE format 'YYYYMMDD') 
                        AND cast('$PARAM{'e_date'}' as DATE format 'YYYYMMDD')  
     AND k1.SHDR_ACCT NOT IN ('B880810718','B880859746','B880969127','B880969135') 
-    AND k1.SEC_CDE 	IN
+    AND k1.SEC_CDE     IN
     (SELECT s01.SEC_CDE
         FROM NSOVIEW.CSDC_INTG_SEC_INFO s01, $PARAM{'CMSSDB'}.ABNO_INCM_CALC_OBJ s02     
         WHERE S_DATE <= k1.trad_date
         AND E_DATE > k1.trad_date
-        AND SEC_REG_STS_SORT NOT IN ('2','5')            --证券登记状态类别 2：退市、5：废弃
         AND s02.ABNO_INCM_CALC_BTCH = '$PARAM{'abno_incm_calc_btch'}'
-        AND s01.SEC_CDE = s02.SEC_CDE)
-	AND k1.trad_date = t4.trad_date
-	AND k1.sec_cde = t4.sec_cde
+        AND s01.SEC_CDE = s02.SEC_CDE
+        AND SEC_REG_STS_SORT NOT IN ('2','5')            --证券登记状态类别 2：退市、5：废弃
+        AND s01.MKT_SORT = '0'
+        )
+    AND k1.trad_date = t4.trad_date
+    AND k1.sec_cde = t4.sec_cde
 GROUP BY 1,2,3
 ) RSLT
 GROUP BY 1,2,3,4,5,10;

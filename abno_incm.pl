@@ -74,7 +74,7 @@ sub perform_abno_calc() {
 
     if (index($JOB_PARAM{'sec_exch_cde'}, "1") >= 0){
         print "\nAbnormal income calculation for SZSE securities ...\n";
-#        run_update("abno_calc_szse.sql", %PARAM);
+        run_update("abno_calc_szse.sql", %PARAM);
     }
 
     # Produce final result.
