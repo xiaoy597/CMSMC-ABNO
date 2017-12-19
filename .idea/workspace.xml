@@ -1,10 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="992c8d72-380c-463e-9306-d7d95ae9ba31" name="Default" comment="Finished the abnormal income calculation for SZSE accounts.">
+    <list default="true" id="992c8d72-380c-463e-9306-d7d95ae9ba31" name="Default" comment="">
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/sql-template/abno_calc_sse.sql" afterPath="$PROJECT_DIR$/sql-template/abno_calc_sse.sql" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/sql-template/abno_calc_szse.sql" afterPath="$PROJECT_DIR$/sql-template/abno_calc_szse.sql" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/abno_incm.pl" afterPath="$PROJECT_DIR$/abno_incm.pl" />
     </list>
     <ignored path="$PROJECT_DIR$/out/" />
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
@@ -20,11 +19,10 @@
       <file leaf-file-name="abno_incm.pl" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/abno_incm.pl">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="3549">
-              <caret line="261" column="14" lean-forward="true" selection-start-line="261" selection-start-column="14" selection-end-line="261" selection-end-column="14" />
+            <state relative-caret-position="187">
+              <caret line="11" column="36" lean-forward="true" selection-start-line="11" selection-start-column="36" selection-end-line="11" selection-end-column="36" />
               <folding>
                 <element signature="e#57#72#0#Perl5" expanded="true" />
-                <element signature="e#1699#1722#0#Perl5" expanded="true" />
               </folding>
             </state>
           </provider>
@@ -33,7 +31,7 @@
       <file leaf-file-name="pz_file.pl" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/pz_file.pl">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="17">
+            <state relative-caret-position="2091">
               <caret line="136" column="0" lean-forward="false" selection-start-line="136" selection-start-column="0" selection-end-line="136" selection-end-column="33" />
               <folding>
                 <element signature="n#!!doc" expanded="true" />
@@ -46,8 +44,8 @@
       <file leaf-file-name="pz_invst_cls.pl" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/pz_invst_cls.pl">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="119">
-              <caret line="96" column="0" lean-forward="true" selection-start-line="96" selection-start-column="0" selection-end-line="96" selection-end-column="0" />
+            <state relative-caret-position="1411">
+              <caret line="96" column="0" lean-forward="false" selection-start-line="96" selection-start-column="0" selection-end-line="96" selection-end-column="0" />
               <folding>
                 <element signature="n#!!doc" expanded="true" />
               </folding>
@@ -922,7 +920,8 @@
       <workItem from="1513243981654" duration="47000" />
       <workItem from="1513297732210" duration="11459000" />
       <workItem from="1513557486836" duration="4754000" />
-      <workItem from="1513578848406" duration="1447000" />
+      <workItem from="1513578848406" duration="1535000" />
+      <workItem from="1513653572019" duration="1385000" />
     </task>
     <task id="LOCAL-00001" summary="Initial commit.">
       <created>1513158235903</created>
@@ -959,11 +958,18 @@
       <option name="project" value="LOCAL" />
       <updated>1513578694947</updated>
     </task>
-    <option name="localTasksCounter" value="6" />
+    <task id="LOCAL-00006" summary="Implemented the deviation correction statement.">
+      <created>1513589372258</created>
+      <option name="number" value="00006" />
+      <option name="presentableId" value="LOCAL-00006" />
+      <option name="project" value="LOCAL" />
+      <updated>1513589372258</updated>
+    </task>
+    <option name="localTasksCounter" value="7" />
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="41631000" />
+    <option name="totallyTimeSpent" value="43104000" />
   </component>
   <component name="ToolWindowManager">
     <frame x="-8" y="-8" width="1382" height="744" extended-state="6" />
@@ -1012,7 +1018,8 @@
     <MESSAGE value="simple commit." />
     <MESSAGE value="Finished the abnormal income calculation for SSE accounts." />
     <MESSAGE value="Finished the abnormal income calculation for SZSE accounts." />
-    <option name="LAST_COMMIT_MESSAGE" value="Finished the abnormal income calculation for SZSE accounts." />
+    <MESSAGE value="Implemented the deviation correction statement." />
+    <option name="LAST_COMMIT_MESSAGE" value="Implemented the deviation correction statement." />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager />
@@ -1025,7 +1032,37 @@
           <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
           <folding>
             <element signature="e#57#72#0#Perl5" expanded="true" />
-            <element signature="e#1699#1722#0#Perl5" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/pz_file.pl">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="2312">
+          <caret line="136" column="0" lean-forward="false" selection-start-line="136" selection-start-column="0" selection-end-line="136" selection-end-column="33" />
+          <folding>
+            <element signature="n#!!doc" expanded="true" />
+            <element signature="e#293#301#0#Perl5" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/pz_invst_cls.pl">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="1632">
+          <caret line="96" column="0" lean-forward="true" selection-start-line="96" selection-start-column="0" selection-end-line="96" selection-end-column="0" />
+          <folding>
+            <element signature="n#!!doc" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/abno_incm.pl">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="0">
+          <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
+          <folding>
+            <element signature="e#57#72#0#Perl5" expanded="true" />
           </folding>
         </state>
       </provider>
@@ -1045,7 +1082,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="187">
           <caret line="11" column="9" lean-forward="false" selection-start-line="11" selection-start-column="9" selection-end-line="11" selection-end-column="9" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -1053,7 +1089,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="119">
           <caret line="7" column="0" lean-forward="false" selection-start-line="7" selection-start-column="0" selection-end-line="7" selection-end-column="0" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -1073,7 +1108,6 @@
           <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
           <folding>
             <element signature="e#57#72#0#Perl5" expanded="true" />
-            <element signature="e#1699#1722#0#Perl5" expanded="true" />
           </folding>
         </state>
       </provider>
@@ -1093,7 +1127,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="187">
           <caret line="11" column="9" lean-forward="false" selection-start-line="11" selection-start-column="9" selection-end-line="11" selection-end-column="9" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -1101,7 +1134,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="119">
           <caret line="7" column="0" lean-forward="false" selection-start-line="7" selection-start-column="0" selection-end-line="7" selection-end-column="0" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -1121,7 +1153,6 @@
           <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
           <folding>
             <element signature="e#57#72#0#Perl5" expanded="true" />
-            <element signature="e#1699#1722#0#Perl5" expanded="true" />
           </folding>
         </state>
       </provider>
@@ -1155,7 +1186,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="187">
           <caret line="11" column="9" lean-forward="false" selection-start-line="11" selection-start-column="9" selection-end-line="11" selection-end-column="9" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -1163,7 +1193,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="119">
           <caret line="7" column="0" lean-forward="false" selection-start-line="7" selection-start-column="0" selection-end-line="7" selection-end-column="0" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -1173,7 +1202,6 @@
           <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
           <folding>
             <element signature="e#57#72#0#Perl5" expanded="true" />
-            <element signature="e#1699#1722#0#Perl5" expanded="true" />
           </folding>
         </state>
       </provider>
@@ -1207,7 +1235,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="187">
           <caret line="11" column="9" lean-forward="false" selection-start-line="11" selection-start-column="9" selection-end-line="11" selection-end-column="9" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -1215,7 +1242,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="119">
           <caret line="7" column="0" lean-forward="false" selection-start-line="7" selection-start-column="0" selection-end-line="7" selection-end-column="0" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -1266,7 +1292,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="187">
           <caret line="11" column="9" lean-forward="false" selection-start-line="11" selection-start-column="9" selection-end-line="11" selection-end-column="9" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -1274,13 +1299,12 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="119">
           <caret line="7" column="0" lean-forward="false" selection-start-line="7" selection-start-column="0" selection-end-line="7" selection-end-column="0" />
-          <folding />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/pz_file.pl">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="17">
+        <state relative-caret-position="2091">
           <caret line="136" column="0" lean-forward="false" selection-start-line="136" selection-start-column="0" selection-end-line="136" selection-end-column="33" />
           <folding>
             <element signature="n#!!doc" expanded="true" />
@@ -1291,8 +1315,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/pz_invst_cls.pl">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="119">
-          <caret line="96" column="0" lean-forward="true" selection-start-line="96" selection-start-column="0" selection-end-line="96" selection-end-column="0" />
+        <state relative-caret-position="1411">
+          <caret line="96" column="0" lean-forward="false" selection-start-line="96" selection-start-column="0" selection-end-line="96" selection-end-column="0" />
           <folding>
             <element signature="n#!!doc" expanded="true" />
           </folding>
@@ -1301,11 +1325,10 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/abno_incm.pl">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="3549">
-          <caret line="261" column="14" lean-forward="true" selection-start-line="261" selection-start-column="14" selection-end-line="261" selection-end-column="14" />
+        <state relative-caret-position="187">
+          <caret line="11" column="36" lean-forward="true" selection-start-line="11" selection-start-column="36" selection-end-line="11" selection-end-column="36" />
           <folding>
             <element signature="e#57#72#0#Perl5" expanded="true" />
-            <element signature="e#1699#1722#0#Perl5" expanded="true" />
           </folding>
         </state>
       </provider>

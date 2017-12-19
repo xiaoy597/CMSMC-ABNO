@@ -4,6 +4,11 @@ use warnings FATAL => 'all';
 use File::Path;
 use Time::localtime;
 
+END {
+    # Executed before program exits.
+    update_job_sts();
+}
+
 die "Batch number is not specified." if (!defined($ARGV[0]));
 
 die "CMSS_HOME is not defined." if (!defined($ARGV[1]) and !defined($ENV{'CMSS_HOME'}));
@@ -34,6 +39,8 @@ $MAIN_PARAM{"BATCH_NBR"} = $ARGV[0];
 
 my $LOG_FILE = "$LOG_DIR/abno_$MAIN_PARAM{'BATCH_NBR'}.log";
 
+my $job_sts;
+
 if (!-e $WORK_DIR) {
     mkpath($WORK_DIR)
 }
@@ -50,6 +57,13 @@ sub main {
     # 获得异常收益计算作业参数
     get_job_info($MAIN_PARAM{'BATCH_NBR'});
 
+    # 设置作业为运行状态
+    $job_sts = '0';
+    update_job_sts();
+
+    # 设置默认作业状态为失败
+    $job_sts = '2';
+
     # 初始化投资标的参数表
     prepare_abno_obj_table();
 
@@ -58,6 +72,23 @@ sub main {
 
     # 执行异常收益计算
     perform_abno_calc();
+
+    # 设置作业运行状态为成功
+    $job_sts = '1';
+
+}
+
+
+sub update_job_sts() {
+
+    my %PARAM = %MAIN_PARAM;
+    foreach my $k (keys %JOB_PARAM) {
+        $PARAM{$k} = $JOB_PARAM{$k};
+    }
+
+    $PARAM{'abno_incm_calc_btch_sts'} = $job_sts;
+
+    run_update("update-job-sts.sql", %PARAM);
 
 }
 
@@ -78,7 +109,8 @@ sub perform_abno_calc() {
     }
 
     # Produce final result.
-    # ... ...
+    print "\nAbnormal income calculation for final result ...\n";
+    run_update("abno_calc_final.sql", %PARAM);
 
 }
 
@@ -164,6 +196,7 @@ sub get_job_info() {
     }
     print "\n";
 }
+
 
 sub quote_values() {
     my ($values) = @_;
