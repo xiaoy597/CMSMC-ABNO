@@ -5,6 +5,37 @@ DELETE FROM $PARAM{'CMSSDB'}.MID_ABNO_INCM_CACL_DTL
 WHERE ABNO_INCM_CALC_BTCH = '$PARAM{'abno_incm_calc_btch'}'
 AND SEC_EXCH_CDE = '1';
 
+CREATE VOLATILE MULTISET TABLE VT_ABNO_SZSE_SEC AS(
+	SELECT B.SEC_CDE
+	FROM $PARAM{'CMSSDB'}.ABNO_INCM_CALC_OBJ A, NSOVIEW.CSDC_INTG_SEC_INFO B
+	WHERE A.ABNO_INCM_CALC_BTCH = '$PARAM{'abno_incm_calc_btch'}'
+	AND A.SEC_CDE = B.SEC_CDE
+	AND B.S_DATE <= CAST('$PARAM{'e_date'}' AS DATE FORMAT 'YYYYMMDD')
+	AND B.E_DATE > CAST('$PARAM{'e_date'}' AS DATE FORMAT 'YYYYMMDD')
+	AND B.MKT_SORT = '1'
+) WITH DATA UNIQUE PRIMARY INDEX (SEC_CDE)
+ON COMMIT PRESERVE ROWS;
+
+.IF ERRORCODE <> 0 THEN .QUIT 12;
+
+COLLECT STATISTICS COLUMN SEC_CDE ON VT_ABNO_SZSE_SEC;
+
+.IF ERRORCODE <> 0 THEN .QUIT 12;
+
+CREATE VOLATILE MULTISET TABLE VT_ABNO_SEC_ACCT AS (
+    SELECT PRMT_VAL AS SEC_ACCT 
+    FROM $PARAM{'CMSSDB'}.ABNO_INCM_CALC_INVST
+    WHERE ABNO_INCM_CALC_BTCH = '$PARAM{'abno_incm_calc_btch'}' AND PRMT_TYPE = '1'
+) WITH DATA UNIQUE PRIMARY INDEX (SEC_ACCT)
+ON COMMIT PRESERVE ROWS;
+
+.IF ERRORCODE <> 0 THEN .QUIT 12;
+
+COLLECT STATISTICS COLUMN SEC_ACCT ON VT_ABNO_SEC_ACCT;
+
+.IF ERRORCODE <> 0 THEN .QUIT 12;
+
+
 --深交所 普通交易过户 （A股） （包含信用账户的交易过户） 
 INSERT INTO $PARAM{'CMSSDB'}.MID_ABNO_INCM_CACL_DTL
 SELECT
@@ -30,11 +61,7 @@ SELECT
   ,SUM(ZEROIFNULL(BUY_HAND_FEE)+ZEROIFNULL(BUY_STMP_TAX)+ZEROIFNULL(BUY_TRAN_FEE)+ZEROIFNULL(BUY_CMSN_CHG)) AS BUY_FEE_TAX
   ,SUM(ZEROIFNULL(SAL_HAND_FEE)+ZEROIFNULL(SAL_STMP_TAX)+ZEROIFNULL(SAL_TRAN_FEE)+ZEROIFNULL(SAL_CMSN_CHG))  AS SAL_FEE_TAX
 FROM NSOVIEW.CSDC_S_CLR_TRANS_TRAD t1,
-    (
-        SELECT PRMT_VAL AS SEC_ACCT 
-        FROM $PARAM{'CMSSDB'}.ABNO_INCM_CALC_INVST
-        WHERE ABNO_INCM_CALC_BTCH = '$PARAM{'abno_incm_calc_btch'}' AND PRMT_TYPE = '1'
-    ) t2
+    VT_ABNO_SEC_ACCT t2
 WHERE
   t1.shdr_acct = t2.sec_acct 
   AND t1.TRAD_DATE BETWEEN CAST('$PARAM{'s_date'}' AS DATE FORMAT 'YYYYMMDD') 
@@ -48,15 +75,7 @@ WHERE
       AND E_DATE > t1.trad_date)
   AND SHDR_ACCT <> '0899999004' --中国证券登记结算深圳分公司证券集中交收账户
   AND SUBSTR(CAST(SEC_CDE+1000000 AS VARCHAR(7)),2) IN
-    (SELECT s01.SEC_CDE
-      FROM NSOVIEW.CSDC_INTG_SEC_INFO s01, $PARAM{'CMSSDB'}.ABNO_INCM_CALC_OBJ s02     
-      WHERE S_DATE <= t1.TRAD_DATE
-      AND E_DATE > t1.TRAD_DATE
-      AND s02.ABNO_INCM_CALC_BTCH = '$PARAM{'abno_incm_calc_btch'}'
-      AND s01.SEC_CDE = s02.SEC_CDE
-      AND SEC_REG_STS_SORT NOT IN ('2','5')            --证券登记状态类别 2：退市、5：废弃
-	  AND s01.MKT_SORT = '1'
-    )
+    (SELECT SEC_CDE FROM VT_ABNO_SZSE_SEC)
 GROUP BY 1,2,3
 ) RSLT
 GROUP BY 1,2,3,4,10
@@ -87,25 +106,13 @@ select
   ,SUM(CASE WHEN chg_vol>0 THEN t1.chg_vol ELSE 0 END) AS buy_qty--买               
   ,SUM(CASE WHEN chg_vol<0 THEN ABS(t1.chg_vol) ELSE 0 END) AS sal_qty --卖 
 from nsoview.CSDC_S_SHDR_HLD_CHG t1,
-    (
-        SELECT PRMT_VAL AS SEC_ACCT 
-        FROM $PARAM{'CMSSDB'}.ABNO_INCM_CALC_INVST
-        WHERE ABNO_INCM_CALC_BTCH = '$PARAM{'abno_incm_calc_btch'}' AND PRMT_TYPE = '1'
-    ) t2
+    VT_ABNO_SEC_ACCT t2
 where t1.shdr_acct = t2.sec_acct
   and t1.chg_cde in ( 'A0A','AOC','A4A','A69','A72','A76','A77','A89','R04','R05','R06')                               
   and t1.chg_date BETWEEN CAST('$PARAM{'s_date'}' AS DATE FORMAT 'YYYYMMDD') 
                    AND CAST('$PARAM{'e_date'}' AS DATE FORMAT 'YYYYMMDD')  
   and t1.SEC_CDE IN
-   (SELECT s01.SEC_CDE
-      FROM NSOVIEW.CSDC_INTG_SEC_INFO s01, $PARAM{'CMSSDB'}.ABNO_INCM_CALC_OBJ s02     
-      WHERE S_DATE <= t1.chg_date
-      AND E_DATE > t1.chg_date
-      AND s02.ABNO_INCM_CALC_BTCH = '$PARAM{'abno_incm_calc_btch'}'
-      AND s01.SEC_CDE = s02.SEC_CDE
-      AND SEC_REG_STS_SORT NOT IN ('2','5')            --证券登记状态类别 2：退市、5：废弃
-	  AND s01.MKT_SORT = '1'
-    )
+   (SELECT SEC_CDE FROM VT_ABNO_SZSE_SEC)
   group by 1,2,3
   union all
 --2017年5月后计算方法
@@ -116,25 +123,13 @@ select
   ,SUM(CASE WHEN chg_vol>0 THEN chg_vol ELSE 0 END) AS buy_qty--买               
   ,SUM(CASE WHEN chg_vol<0 THEN ABS(chg_vol) ELSE 0 END) AS sal_qty --卖 
 from   nsoview.CSDC_S_STK_CHG t1,
-    (
-        SELECT PRMT_VAL AS SEC_ACCT 
-        FROM $PARAM{'CMSSDB'}.ABNO_INCM_CALC_INVST
-        WHERE ABNO_INCM_CALC_BTCH = '$PARAM{'abno_incm_calc_btch'}' AND PRMT_TYPE = '1'
-    ) t2
+    VT_ABNO_SEC_ACCT t2
 where t1.shdr_acct = t2.sec_acct
   and t1.chg_cde in ( 'A0A','AOC','A4A','A69','A72','A76','A77','A89','R04','R05','R06')                               
   and t1.chg_date BETWEEN CAST('$PARAM{'s_date'}' AS DATE FORMAT 'YYYYMMDD') 
                    AND CAST('$PARAM{'e_date'}' AS DATE FORMAT 'YYYYMMDD')  
   and t1.SEC_CDE IN
-   (SELECT s01.SEC_CDE
-      FROM NSOVIEW.CSDC_INTG_SEC_INFO s01, $PARAM{'CMSSDB'}.ABNO_INCM_CALC_OBJ s02     
-      WHERE S_DATE <= t1.chg_date
-      AND E_DATE > t1.chg_date
-      AND s02.ABNO_INCM_CALC_BTCH = '$PARAM{'abno_incm_calc_btch'}'
-      AND s01.SEC_CDE = s02.SEC_CDE
-      AND SEC_REG_STS_SORT NOT IN ('2','5')            --证券登记状态类别 2：退市、5：废弃
-	  AND s01.MKT_SORT = '1'
-    ) 
+   (SELECT SEC_CDE FROM VT_ABNO_SZSE_SEC) 
   group by 1,2,3
 ) RSLT
 GROUP BY 1,2,3,4,10
@@ -176,26 +171,14 @@ select
   ) bb
   ON aa.SEC_CDE = bb.STK_CDE
   INNER JOIN
-    (
-        SELECT PRMT_VAL AS SEC_ACCT 
-        FROM $PARAM{'CMSSDB'}.ABNO_INCM_CALC_INVST
-        WHERE ABNO_INCM_CALC_BTCH = '$PARAM{'abno_incm_calc_btch'}' AND PRMT_TYPE = '1'
-    ) cc
+    VT_ABNO_SEC_ACCT cc
   on aa.sec_acct_nbr = cc.sec_acct
   WHERE bb.LIST_LAST_DATE BETWEEN CAST('$PARAM{'s_date'}' AS DATE FORMAT 'YYYYMMDD') 
                    AND CAST('$PARAM{'e_date'}' AS DATE FORMAT 'YYYYMMDD')  
     AND aa.s_date <= CAST(bb.LIST_LAST_DATE AS DATE FORMAT 'YYYYMMDD') 
     AND aa.e_date >CAST(bb.LIST_LAST_DATE AS DATE FORMAT 'YYYYMMDD')
 	AND aa.SEC_CDE IN 
-      (SELECT s01.SEC_CDE
-         FROM NSOVIEW.CSDC_INTG_SEC_INFO s01, $PARAM{'CMSSDB'}.ABNO_INCM_CALC_OBJ s02     
-         WHERE S_DATE <= bb.LIST_LAST_DATE
-         AND E_DATE > bb.LIST_LAST_DATE
-         AND s02.ABNO_INCM_CALC_BTCH = '$PARAM{'abno_incm_calc_btch'}'
-         AND s01.SEC_CDE = s02.SEC_CDE
-         AND SEC_REG_STS_SORT NOT IN ('2','5')            --证券登记状态类别 2：退市、5：废弃
-	     AND s01.MKT_SORT = '1'
-       ) 
+      (SELECT SEC_CDE FROM VT_ABNO_SZSE_SEC) 
 	and aa.MKT_SORT ='1'
 	group by 1,2
 ) RSLT
@@ -253,22 +236,10 @@ from
    on t1.sec_cde =t2.STK_CDE
    and t1.chg_date = t2.LIST_LAST_DATE
    inner join
-    (
-        SELECT PRMT_VAL AS SEC_ACCT 
-        FROM $PARAM{'CMSSDB'}.ABNO_INCM_CALC_INVST
-        WHERE ABNO_INCM_CALC_BTCH = '$PARAM{'abno_incm_calc_btch'}' AND PRMT_TYPE = '1'
-    ) t3
+    VT_ABNO_SEC_ACCT t3
 	on t1.shdr_acct = t3.sec_acct
    where  t2.STK_CDE  IN 
-      (SELECT s01.SEC_CDE
-         FROM NSOVIEW.CSDC_INTG_SEC_INFO s01, $PARAM{'CMSSDB'}.ABNO_INCM_CALC_OBJ s02     
-         WHERE S_DATE <= t1.chg_date
-         AND E_DATE > t1.chg_date
-         AND s02.ABNO_INCM_CALC_BTCH = '$PARAM{'abno_incm_calc_btch'}'
-         AND s01.SEC_CDE = s02.SEC_CDE
-         AND SEC_REG_STS_SORT NOT IN ('2','5')            --证券登记状态类别 2：退市、5：废弃
-	     AND s01.MKT_SORT = '1'
-       ) 
+      (SELECT SEC_CDE FROM VT_ABNO_SZSE_SEC) 
     group  by 1,2,3,4,5
 union all
 -- 五月份后定向增发，不含股权激励
@@ -306,22 +277,10 @@ from
    on t1.sec_cde =t2.STK_CDE
    and t1.chg_date = t2.LIST_LAST_DATE
    inner join 
-    (
-        SELECT PRMT_VAL AS SEC_ACCT 
-        FROM $PARAM{'CMSSDB'}.ABNO_INCM_CALC_INVST
-        WHERE ABNO_INCM_CALC_BTCH = '$PARAM{'abno_incm_calc_btch'}' AND PRMT_TYPE = '1'
-    ) t3
+    VT_ABNO_SEC_ACCT t3
 	on t1.shdr_acct = t3.sec_acct
   where  t2.STK_CDE  IN 
-      (SELECT s01.SEC_CDE
-         FROM NSOVIEW.CSDC_INTG_SEC_INFO s01, $PARAM{'CMSSDB'}.ABNO_INCM_CALC_OBJ s02     
-         WHERE S_DATE <= t1.chg_date
-         AND E_DATE > t1.chg_date
-         AND s02.ABNO_INCM_CALC_BTCH = '$PARAM{'abno_incm_calc_btch'}'
-         AND s01.SEC_CDE = s02.SEC_CDE
-         AND SEC_REG_STS_SORT NOT IN ('2','5')            --证券登记状态类别 2：退市、5：废弃
-	     AND s01.MKT_SORT = '1'
-       ) 
+      (SELECT SEC_CDE FROM VT_ABNO_SZSE_SEC) 
    AND t1.sec_cde IS NOT  NULL
    group  by 1,2,3,4,5
 ) RSLT
@@ -354,11 +313,7 @@ sel
   0 AS SAL_AMT
 from 
   nsoview.CSDC_S_SHDR_HLD_CHG t1 , CMSSVIEW.SEC_QUOT t2, 
-  (
-        SELECT PRMT_VAL AS SEC_ACCT 
-        FROM $PARAM{'CMSSDB'}.ABNO_INCM_CALC_INVST
-        WHERE ABNO_INCM_CALC_BTCH = '$PARAM{'abno_incm_calc_btch'}' AND PRMT_TYPE = '1'
-  ) t3
+  VT_ABNO_SEC_ACCT t3
 where chg_date BETWEEN CAST('$PARAM{'s_date'}' AS DATE FORMAT 'YYYYMMDD') 
                    AND CAST('$PARAM{'e_date'}' AS DATE FORMAT 'YYYYMMDD') 
   and chg_cde ='A30'
@@ -367,15 +322,7 @@ where chg_date BETWEEN CAST('$PARAM{'s_date'}' AS DATE FORMAT 'YYYYMMDD')
   and substr(CAST(1000000+t1.SEC_CDE AS CHAR(7)),2,6) = t2.sec_cde
   and t1.chg_date = t2.trad_date
   and t2.sec_cde in
-      (SELECT s01.SEC_CDE
-         FROM NSOVIEW.CSDC_INTG_SEC_INFO s01, $PARAM{'CMSSDB'}.ABNO_INCM_CALC_OBJ s02     
-         WHERE S_DATE <= t1.chg_date
-         AND E_DATE > t1.chg_date
-         AND s02.ABNO_INCM_CALC_BTCH = '$PARAM{'abno_incm_calc_btch'}'
-         AND s01.SEC_CDE = s02.SEC_CDE
-         AND SEC_REG_STS_SORT NOT IN ('2','5')            --证券登记状态类别 2：退市、5：废弃
-	     AND s01.MKT_SORT = '1'
-       )
+      (SELECT SEC_CDE FROM VT_ABNO_SZSE_SEC)
   and t1.shdr_acct = t3.sec_acct
 group  by 1,2,3
 union all
@@ -390,11 +337,7 @@ sel
   0 AS SAL_AMT
 from 
   nsoview.CSDC_S_STK_CHG t1  , CMSSVIEW.SEC_QUOT t2, 
-  (
-        SELECT PRMT_VAL AS SEC_ACCT 
-        FROM $PARAM{'CMSSDB'}.ABNO_INCM_CALC_INVST
-        WHERE ABNO_INCM_CALC_BTCH = '$PARAM{'abno_incm_calc_btch'}' AND PRMT_TYPE = '1'
-  ) t3
+  VT_ABNO_SEC_ACCT t3
 where chg_date BETWEEN CAST('$PARAM{'s_date'}' AS DATE FORMAT 'YYYYMMDD') 
                    AND CAST('$PARAM{'e_date'}' AS DATE FORMAT 'YYYYMMDD') 
   and chg_cde ='A44'
@@ -403,15 +346,7 @@ where chg_date BETWEEN CAST('$PARAM{'s_date'}' AS DATE FORMAT 'YYYYMMDD')
   and t1.SEC_CDE = t2.sec_cde
   and t1.chg_date = t2.trad_date
   and t1.sec_cde in
-      (SELECT s01.SEC_CDE
-         FROM NSOVIEW.CSDC_INTG_SEC_INFO s01, $PARAM{'CMSSDB'}.ABNO_INCM_CALC_OBJ s02     
-         WHERE S_DATE <= t1.chg_date
-         AND E_DATE > t1.chg_date
-         AND s02.ABNO_INCM_CALC_BTCH = '$PARAM{'abno_incm_calc_btch'}'
-         AND s01.SEC_CDE = s02.SEC_CDE
-         AND SEC_REG_STS_SORT NOT IN ('2','5')            --证券登记状态类别 2：退市、5：废弃
-	     AND s01.MKT_SORT = '1'
-       )
+      (SELECT SEC_CDE FROM VT_ABNO_SZSE_SEC)
   and t1.shdr_acct = t3.sec_acct
   group  by 1,2,3
 ) RSLT
@@ -453,26 +388,14 @@ FROM (
                    AND CAST('$PARAM{'e_date'}' AS DATE FORMAT 'YYYYMMDD') 
  ) t1,
  nsoview.csdc_s_right_prmt_his t2,
- (
-        SELECT PRMT_VAL AS SEC_ACCT 
-        FROM $PARAM{'CMSSDB'}.ABNO_INCM_CALC_INVST
-        WHERE ABNO_INCM_CALC_BTCH = '$PARAM{'abno_incm_calc_btch'}' AND PRMT_TYPE = '1'
-  ) t3
+ VT_ABNO_SEC_ACCT t3
  WHERE CAST(t2.CONV_SEC_CDE AS CHAR(6)) =SUBSTR(CAST(1000000+CAST(t1.sec_cde AS INT) AS CHAR(7)),2)
    AND t1.chg_date = t2.RIGHT_ARRV_DATE 
+   AND t1.shdr_acct = t3.sec_acct
    AND t2.SUBSC_PRC <>0
    AND t2.E_DATE ='30001231'
    AND t2.CONV_SEC_CDE IN 
-		(SELECT s01.SEC_CDE
-         FROM NSOVIEW.CSDC_INTG_SEC_INFO s01, $PARAM{'CMSSDB'}.ABNO_INCM_CALC_OBJ s02     
-         WHERE S_DATE <= t1.chg_date
-         AND E_DATE > t1.chg_date
-         AND s02.ABNO_INCM_CALC_BTCH = '$PARAM{'abno_incm_calc_btch'}'
-         AND s01.SEC_CDE = s02.SEC_CDE
-         AND SEC_REG_STS_SORT NOT IN ('2','5')            --证券登记状态类别 2：退市、5：废弃
-	     AND s01.MKT_SORT = '1'
-       )
-   AND t1.shdr_acct = t3.sec_acct
+		(SELECT SEC_CDE FROM VT_ABNO_SZSE_SEC)
  GROUP BY 1,2,3,4,5
  UNION ALL
  SEL t1.shdr_acct, 
@@ -492,21 +415,15 @@ FROM (
  AND chg_date BETWEEN CAST('$PARAM{'s_date'}' AS DATE FORMAT 'YYYYMMDD') 
                    AND CAST('$PARAM{'e_date'}' AS DATE FORMAT 'YYYYMMDD') 
  ) t1,
- nsoview.csdc_s_right_prmt_his t2 
+ nsoview.csdc_s_right_prmt_his t2,
+ VT_ABNO_SEC_ACCT t3 
  WHERE CAST(t2.CONV_SEC_CDE AS CHAR(6))  =SUBSTR(CAST(1000000+CAST(t1.sec_cde AS INT) AS CHAR(7)),2)
    AND t1.chg_date = t2.RIGHT_ARRV_DATE 
+   AND t1.shdr_acct = t3.sec_acct
    AND t2.SUBSC_PRC <>0
    AND t2.E_DATE ='30001231'
    AND t2.CONV_SEC_CDE IN 
-		(SELECT s01.SEC_CDE
-         FROM NSOVIEW.CSDC_INTG_SEC_INFO s01, $PARAM{'CMSSDB'}.ABNO_INCM_CALC_OBJ s02     
-         WHERE S_DATE <= t1.chg_date
-         AND E_DATE > t1.chg_date
-         AND s02.ABNO_INCM_CALC_BTCH = '$PARAM{'abno_incm_calc_btch'}'
-         AND s01.SEC_CDE = s02.SEC_CDE
-         AND SEC_REG_STS_SORT NOT IN ('2','5')            --证券登记状态类别 2：退市、5：废弃
-	     AND s01.MKT_SORT = '1'
-       )
+		(SELECT SEC_CDE FROM VT_ABNO_SZSE_SEC)
  GROUP BY 1,2,3,4,5
  ) RSLT
 GROUP BY 1,2,3,4,10;
@@ -537,25 +454,13 @@ select
   ,0 AS SAL_QTY
   ,0 AS SAL_AMT
 from   nsoview.CSDC_S_SHDR_HLD_CHG a, 
-  (
-        SELECT PRMT_VAL AS SEC_ACCT 
-        FROM $PARAM{'CMSSDB'}.ABNO_INCM_CALC_INVST
-        WHERE ABNO_INCM_CALC_BTCH = '$PARAM{'abno_incm_calc_btch'}' AND PRMT_TYPE = '1'
-  ) b
+  VT_ABNO_SEC_ACCT b
 where a.chg_cde in ( 'A40','A39')                               
   and a.chg_date BETWEEN CAST('$PARAM{'s_date'}' AS DATE FORMAT 'YYYYMMDD') 
                    AND CAST('$PARAM{'e_date'}' AS DATE FORMAT 'YYYYMMDD')
   and a.shdr_acct = b.sec_acct
   and substr(CAST(1000000+a.SEC_CDE AS CHAR(7)),2,6) in 
-  		(SELECT s01.SEC_CDE
-         FROM NSOVIEW.CSDC_INTG_SEC_INFO s01, $PARAM{'CMSSDB'}.ABNO_INCM_CALC_OBJ s02     
-         WHERE S_DATE <= a.chg_date
-         AND E_DATE > a.chg_date
-         AND s02.ABNO_INCM_CALC_BTCH = '$PARAM{'abno_incm_calc_btch'}'
-         AND s01.SEC_CDE = s02.SEC_CDE
-         AND SEC_REG_STS_SORT NOT IN ('2','5')            --证券登记状态类别 2：退市、5：废弃
-	     AND s01.MKT_SORT = '1'
-       )
+  		(SELECT SEC_CDE FROM VT_ABNO_SZSE_SEC)
   group by 1,2,3
 union all
 --深交所（送股、转增）2017年5月份后
@@ -568,25 +473,13 @@ select
   ,0 AS SAL_QTY
   ,0 AS SAL_AMT
 from   nsoview.CSDC_S_STK_CHG a,
-  (
-        SELECT PRMT_VAL AS SEC_ACCT 
-        FROM $PARAM{'CMSSDB'}.ABNO_INCM_CALC_INVST
-        WHERE ABNO_INCM_CALC_BTCH = '$PARAM{'abno_incm_calc_btch'}' AND PRMT_TYPE = '1'
-  ) b 
+  VT_ABNO_SEC_ACCT b 
 where a.chg_cde in ( 'A40','A39')                               
   and a.chg_date BETWEEN CAST('$PARAM{'s_date'}' AS DATE FORMAT 'YYYYMMDD') 
                    AND CAST('$PARAM{'e_date'}' AS DATE FORMAT 'YYYYMMDD')
   and a.shdr_acct = b.sec_acct
   and substr(CAST(1000000+a.SEC_CDE AS CHAR(7)),2,6) in 
-  		(SELECT s01.SEC_CDE
-         FROM NSOVIEW.CSDC_INTG_SEC_INFO s01, $PARAM{'CMSSDB'}.ABNO_INCM_CALC_OBJ s02     
-         WHERE S_DATE <= a.chg_date
-         AND E_DATE > a.chg_date
-         AND s02.ABNO_INCM_CALC_BTCH = '$PARAM{'abno_incm_calc_btch'}'
-         AND s01.SEC_CDE = s02.SEC_CDE
-         AND SEC_REG_STS_SORT NOT IN ('2','5')            --证券登记状态类别 2：退市、5：废弃
-	     AND s01.MKT_SORT = '1'
-       )
+  		(SELECT SEC_CDE FROM VT_ABNO_SZSE_SEC)
 group by 1,2,3
  ) RSLT
 GROUP BY 1,2,3,4,10;
@@ -622,11 +515,7 @@ FROM
 (
   SEL a.* FROM  
   NSPVIEW.ACT_SEC_HOLD_HIS a, 
-  (
-        SELECT PRMT_VAL AS SEC_ACCT 
-        FROM $PARAM{'CMSSDB'}.ABNO_INCM_CALC_INVST
-        WHERE ABNO_INCM_CALC_BTCH = '$PARAM{'abno_incm_calc_btch'}' AND PRMT_TYPE = '1'
-  ) b 
+  VT_ABNO_SEC_ACCT b 
   where MKT_SORT = '1' 
     AND S_DATE <= CAST('$PARAM{'e_date'}' AS DATE FORMAT 'YYYYMMDD')
     AND E_DATE > CAST('$PARAM{'s_date'}' AS DATE FORMAT 'YYYYMMDD') 
@@ -652,15 +541,7 @@ RIGHT JOIN
                    AND CAST('$PARAM{'e_date'}' AS DATE FORMAT 'YYYYMMDD')
 	AND A.STK_CHRC = '00'
 	AND B.SEC_CDE IN
-  		(SELECT s01.SEC_CDE
-         FROM NSOVIEW.CSDC_INTG_SEC_INFO s01, $PARAM{'CMSSDB'}.ABNO_INCM_CALC_OBJ s02     
-         WHERE S_DATE <= b.equity_reg_date
-         AND E_DATE > b.equity_reg_date
-         AND s02.ABNO_INCM_CALC_BTCH = '$PARAM{'abno_incm_calc_btch'}'
-         AND s01.SEC_CDE = s02.SEC_CDE
-         AND SEC_REG_STS_SORT NOT IN ('2','5')            --证券登记状态类别 2：退市、5：废弃
-	     AND s01.MKT_SORT = '1'
-       )
+  		(SELECT SEC_CDE FROM VT_ABNO_SZSE_SEC)
 ) t2
 ON  t1.sec_cde = t2.sec_cde
 AND t1.S_DATE <= t2.EQUITY_REG_DATE
@@ -700,25 +581,13 @@ from nsodata.CSDC_S_CONV_BOND_TRAD  a
 inner join nsodata.CSDC_S_CONV_BOND_REG  b
         on  a.CONV_BOND_CDE=cast(b.CONV_BOND_CDE as integer)
        and b.s_date<= a.PRCS_DATE and b.e_date> a.PRCS_DATE
-inner join (
-        SELECT PRMT_VAL AS SEC_ACCT 
-        FROM $PARAM{'CMSSDB'}.ABNO_INCM_CALC_INVST
-        WHERE ABNO_INCM_CALC_BTCH = '$PARAM{'abno_incm_calc_btch'}' AND PRMT_TYPE = '1'
-       ) c
+inner join VT_ABNO_SEC_ACCT c
 	   on a.shdr_acct = c.sec_acct
 where a.BIZ_SORT in ('30','31','32')  --30 可转债转股，31可转债有条件强制转股，32可转债无条件强制转股
   and a.PRCS_DATE BETWEEN CAST('$PARAM{'s_date'}' AS DATE FORMAT 'YYYYMMDD') 
                    AND CAST('$PARAM{'e_date'}' AS DATE FORMAT 'YYYYMMDD')
   and substr(CAST(1000000+b.SEC_CDE AS CHAR(7)),2,6) in 
-       (SELECT s01.SEC_CDE
-         FROM NSOVIEW.CSDC_INTG_SEC_INFO s01, $PARAM{'CMSSDB'}.ABNO_INCM_CALC_OBJ s02     
-         WHERE S_DATE <= a.PRCS_DATE
-         AND E_DATE > a.PRCS_DATE
-         AND s02.ABNO_INCM_CALC_BTCH = '$PARAM{'abno_incm_calc_btch'}'
-         AND s01.SEC_CDE = s02.SEC_CDE
-         AND SEC_REG_STS_SORT NOT IN ('2','5')            --证券登记状态类别 2：退市、5：废弃
-	     AND s01.MKT_SORT = '1'
-       )
+       (SELECT SEC_CDE FROM VT_ABNO_SZSE_SEC)
 group by 1,2,3,4
 union all
 --深市2017年5月之后
@@ -731,11 +600,7 @@ sel t1.shdr_acct,
 	0 as SAL_QTY,
 	0 as SAL_AMT
 from NSOVIEW.CSDC_S_DTL_RESULT t1, CMSSVIEW.SEC_QUOT t2,
-  (
-        SELECT PRMT_VAL AS SEC_ACCT 
-        FROM $PARAM{'CMSSDB'}.ABNO_INCM_CALC_INVST
-        WHERE ABNO_INCM_CALC_BTCH = '$PARAM{'abno_incm_calc_btch'}' AND PRMT_TYPE = '1'
-  ) t3
+  VT_ABNO_SEC_ACCT t3
 where 
 	BIZ_SORT='ZQZG'  
 	AND t1.TRAD_DATE BETWEEN CAST('$PARAM{'s_date'}' AS DATE FORMAT 'YYYYMMDD') 
@@ -744,15 +609,7 @@ where
 	and t1.trad_date = t2.trad_date
 	and t1.shdr_acct = t3.sec_acct
 	and t1.SEC_CDE  IN 
-  		(SELECT s01.SEC_CDE
-         FROM NSOVIEW.CSDC_INTG_SEC_INFO s01, $PARAM{'CMSSDB'}.ABNO_INCM_CALC_OBJ s02     
-         WHERE S_DATE <= t1.trad_date
-         AND E_DATE > t1.trad_date
-         AND s02.ABNO_INCM_CALC_BTCH = '$PARAM{'abno_incm_calc_btch'}'
-         AND s01.SEC_CDE = s02.SEC_CDE
-         AND SEC_REG_STS_SORT NOT IN ('2','5')            --证券登记状态类别 2：退市、5：废弃
-	     AND s01.MKT_SORT = '1'
-       )
+  		(SELECT SEC_CDE FROM VT_ABNO_SZSE_SEC)
 	AND  SETL_INDC='Y'
     AND SETL_VOL>0
 	--and STK_CHRC<>'02'  --'00'：无限售流通股；'01'：IPO后限售股；'02'：股权激励限售股；'05'：IPO前限售股。
@@ -787,11 +644,7 @@ SELECT
   ,SUM(CASE WHEN chg_vol<0 THEN ABS(t1.chg_vol*t2.cls_prc) ELSE 0 END) AS SAL_AMT    -- 赎回
 FROM
    nsoview.CSDC_S_SHDR_HLD_CHG t1, CMSSVIEW.SEC_QUOT t2,
-  (
-        SELECT PRMT_VAL AS SEC_ACCT 
-        FROM $PARAM{'CMSSDB'}.ABNO_INCM_CALC_INVST
-        WHERE ABNO_INCM_CALC_BTCH = '$PARAM{'abno_incm_calc_btch'}' AND PRMT_TYPE = '1'
-  ) t3
+  VT_ABNO_SEC_ACCT t3
 WHERE
    CHG_DATE BETWEEN CAST('$PARAM{'s_date'}' AS DATE FORMAT 'YYYYMMDD') 
                    AND CAST('$PARAM{'e_date'}' AS DATE FORMAT 'YYYYMMDD')
@@ -801,15 +654,7 @@ WHERE
    and t1.chg_date = t2.trad_date
    and substr(CAST(1000000+t1.SEC_CDE AS CHAR(7)),2,6) = t2.sec_cde
    and t2.sec_cde in
-  		(SELECT s01.SEC_CDE
-         FROM NSOVIEW.CSDC_INTG_SEC_INFO s01, $PARAM{'CMSSDB'}.ABNO_INCM_CALC_OBJ s02     
-         WHERE S_DATE <= t1.chg_date
-         AND E_DATE > t1.chg_date
-         AND s02.ABNO_INCM_CALC_BTCH = '$PARAM{'abno_incm_calc_btch'}'
-         AND s01.SEC_CDE = s02.SEC_CDE
-         AND SEC_REG_STS_SORT NOT IN ('2','5')            --证券登记状态类别 2：退市、5：废弃
-	     AND s01.MKT_SORT = '1'
-       )
+  		(SELECT SEC_CDE FROM VT_ABNO_SZSE_SEC)
    GROUP BY 1,2,3
  ) RSLT
 GROUP BY 1,2,3,4,10;

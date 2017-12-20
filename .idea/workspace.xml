@@ -3,8 +3,12 @@
   <component name="ChangeListManager">
     <list default="true" id="992c8d72-380c-463e-9306-d7d95ae9ba31" name="Default" comment="">
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/abno_incm.pl" afterPath="$PROJECT_DIR$/abno_incm.pl" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/sql-template/abno_calc_final.sql" afterPath="$PROJECT_DIR$/sql-template/abno_calc_final.sql" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/sql-template/abno_calc_sse.sql" afterPath="$PROJECT_DIR$/sql-template/abno_calc_sse.sql" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/sql-template/abno_calc_szse.sql" afterPath="$PROJECT_DIR$/sql-template/abno_calc_szse.sql" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/sql-template/prepare-invst-per-type.sql" afterPath="$PROJECT_DIR$/sql-template/prepare-invst-per-type.sql" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/sql-template/prepare-obj-a.sql" afterPath="$PROJECT_DIR$/sql-template/prepare-obj-a.sql" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/sql-template/prepare-obj-from-file.sql" afterPath="$PROJECT_DIR$/sql-template/prepare-obj-from-file.sql" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/sql-template/prepare-obj-mkt-lvl.sql" afterPath="$PROJECT_DIR$/sql-template/prepare-obj-mkt-lvl.sql" />
     </list>
     <ignored path="$PROJECT_DIR$/out/" />
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
@@ -20,8 +24,8 @@
       <file leaf-file-name="abno_incm.pl" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/abno_incm.pl">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="286">
-              <caret line="147" column="9" lean-forward="true" selection-start-line="147" selection-start-column="9" selection-end-line="147" selection-end-column="9" />
+            <state relative-caret-position="357">
+              <caret line="129" column="0" lean-forward="true" selection-start-line="129" selection-start-column="0" selection-end-line="129" selection-end-column="0" />
               <folding>
                 <element signature="e#57#72#0#Perl5" expanded="true" />
               </folding>
@@ -133,6 +137,20 @@
             </PATH_ELEMENT>
             <PATH_ELEMENT>
               <option name="myItemId" value="CMSMC-ABNO" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+          </PATH>
+          <PATH>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="CMSMC-ABNO" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.ProjectViewProjectNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="CMSMC-ABNO" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="sql-template" />
               <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
             </PATH_ELEMENT>
           </PATH>
@@ -909,7 +927,7 @@
       <workItem from="1513557486836" duration="4754000" />
       <workItem from="1513578848406" duration="1535000" />
       <workItem from="1513653572019" duration="7339000" />
-      <workItem from="1513752750537" duration="640000" />
+      <workItem from="1513752750537" duration="4195000" />
     </task>
     <task id="LOCAL-00001" summary="Initial commit.">
       <created>1513158235903</created>
@@ -960,11 +978,18 @@
       <option name="project" value="LOCAL" />
       <updated>1513659887867</updated>
     </task>
-    <option name="localTasksCounter" value="8" />
+    <task id="LOCAL-00008" summary="Fix business logic in marking top10 share holders.">
+      <created>1513753577809</created>
+      <option name="number" value="00008" />
+      <option name="presentableId" value="LOCAL-00008" />
+      <option name="project" value="LOCAL" />
+      <updated>1513753577809</updated>
+    </task>
+    <option name="localTasksCounter" value="9" />
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="49698000" />
+    <option name="totallyTimeSpent" value="53253000" />
   </component>
   <component name="ToolWindowManager">
     <frame x="-8" y="-8" width="1382" height="744" extended-state="6" />
@@ -1015,7 +1040,8 @@
     <MESSAGE value="Finished the abnormal income calculation for SZSE accounts." />
     <MESSAGE value="Implemented the deviation correction statement." />
     <MESSAGE value="Implemented the final result calculation statement and job status update function." />
-    <option name="LAST_COMMIT_MESSAGE" value="Implemented the final result calculation statement and job status update function." />
+    <MESSAGE value="Fix business logic in marking top10 share holders." />
+    <option name="LAST_COMMIT_MESSAGE" value="Fix business logic in marking top10 share holders." />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager />
@@ -1352,8 +1378,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/abno_incm.pl">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="286">
-          <caret line="147" column="9" lean-forward="true" selection-start-line="147" selection-start-column="9" selection-end-line="147" selection-end-column="9" />
+        <state relative-caret-position="357">
+          <caret line="129" column="0" lean-forward="true" selection-start-line="129" selection-start-column="0" selection-end-line="129" selection-end-column="0" />
           <folding>
             <element signature="e#57#72#0#Perl5" expanded="true" />
           </folding>

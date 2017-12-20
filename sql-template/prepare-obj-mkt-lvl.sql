@@ -9,6 +9,8 @@ SELECT DISTINCT '$PARAM{'abno_incm_calc_btch'}', SEC_CDE
 FROM	NSOVIEW.CSDC_INTG_SEC_INFO
 WHERE MKT_LVL_SORT = '$PARAM{'obj_cntnt'}'        --1：主板，2：中小板，3：创业板
 AND MKT_SORT IN ($PARAM{'sec_exch_cde_quot'})
+AND S_DATE <= CAST('$PARAM{'e_date'}' AS DATE FORMAT 'YYYYMMDD')
+AND E_DATE > CAST('$PARAM{'e_date'}' AS DATE FORMAT 'YYYYMMDD')
 ;
 
 .QUIT;
