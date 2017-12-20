@@ -52,6 +52,7 @@ left outer join
 on tb1.sec_acct = tb3.SEC_ACCT_NBR
 inner join
 (
+--------- 期初、期末持有市值 ----------------------------------------------------
 SELECT 
 T1.SEC_CDE, 
 T1.SEC_ACCT AS sec_acct,
@@ -290,6 +291,7 @@ on tb1.sec_acct = tb6.shdr_acct
 and tb1.sec_cde = tb6.sec_cde
 left outer join
 (
+  ---- 十大股东 --------------------------------------------------------------------  
   SEL  
     T2.OAP_ACCT_NBR,
     T1.SEC_CDE,
@@ -302,16 +304,16 @@ left outer join
     NSOVIEW.CSDC_INTG_SEC_ACCT T2 
     ON T1.SEC_ACCT_NBR = T2.SEC_ACCT
     AND T1.MKT_SORT = T2.MKT_SORT
-    AND T2.S_DATE <= CAST('$PARAM{'e_date'}' AS DATE FORMAT 'YYYYMMDD')
-    AND T2.E_DATE > CAST('$PARAM{'e_date'}' AS DATE FORMAT 'YYYYMMDD')
-  WHERE T1.S_DATE <= CAST('$PARAM{'e_date'}' AS DATE FORMAT 'YYYYMMDD')
-    AND T1.E_DATE >= CAST('$PARAM{'e_date'}' AS DATE FORMAT 'YYYYMMDD')
+    AND T2.S_DATE <= CAST('$PARAM{'s_date'}' AS DATE FORMAT 'YYYYMMDD')
+    AND T2.E_DATE > CAST('$PARAM{'s_date'}' AS DATE FORMAT 'YYYYMMDD')
+  WHERE T1.S_DATE <= CAST('$PARAM{'s_date'}' AS DATE FORMAT 'YYYYMMDD')
+    AND T1.E_DATE >= CAST('$PARAM{'s_date'}' AS DATE FORMAT 'YYYYMMDD')
     AND  T1.SEC_CDE IN
     (
         SELECT sec_cde
           FROM NSOVIEW.CSDC_INTG_SEC_INFO     
-          where s_date <= CAST('$PARAM{'e_date'}' AS DATE FORMAT 'YYYYMMDD')
-              AND e_date > CAST('$PARAM{'e_date'}' AS DATE FORMAT 'YYYYMMDD')
+          where s_date <= CAST('$PARAM{'s_date'}' AS DATE FORMAT 'YYYYMMDD')
+              AND e_date > CAST('$PARAM{'s_date'}' AS DATE FORMAT 'YYYYMMDD')
               AND sec_ctg ='11' --A股
               AND sec_reg_sts_sort NOT IN ('2','5')            --证券登记状态类别 2：退市、5：废弃
     )

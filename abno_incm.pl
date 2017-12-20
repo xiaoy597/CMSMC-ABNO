@@ -76,6 +76,8 @@ sub main {
     # 设置作业运行状态为成功
     $job_sts = '1';
 
+    print "\nAbnormal income calculation finished successfully at " . getTime("yyyy-mm-dd hh:mi:ss") . "\n";
+
 }
 
 
