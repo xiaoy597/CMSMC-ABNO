@@ -52,7 +52,7 @@ SELECT
 FROM (
 SELECT 
    TRAD_DATE
-  ,SUBSTR(CAST(SEC_CDE+1000000 AS VARCHAR(7)),2) AS SEC_CDE
+  ,t3.SEC_CDE
   ,t1.SHDR_ACCT AS SHDR_ACCT
   ,SUM(t1.BUY_VOL)  AS BUY_QTY
   ,SUM(t1.SAL_VOL)  AS SAL_QTY
@@ -61,7 +61,7 @@ SELECT
   ,SUM(ZEROIFNULL(BUY_HAND_FEE)+ZEROIFNULL(BUY_STMP_TAX)+ZEROIFNULL(BUY_TRAN_FEE)+ZEROIFNULL(BUY_CMSN_CHG)) AS BUY_FEE_TAX
   ,SUM(ZEROIFNULL(SAL_HAND_FEE)+ZEROIFNULL(SAL_STMP_TAX)+ZEROIFNULL(SAL_TRAN_FEE)+ZEROIFNULL(SAL_CMSN_CHG))  AS SAL_FEE_TAX
 FROM NSOVIEW.CSDC_S_CLR_TRANS_TRAD t1,
-    VT_ABNO_SEC_ACCT t2
+    VT_ABNO_SEC_ACCT t2, VT_ABNO_SZSE_SEC t3
 WHERE
   t1.shdr_acct = t2.sec_acct 
   AND t1.TRAD_DATE BETWEEN CAST('$PARAM{'s_date'}' AS DATE FORMAT 'YYYYMMDD') 
@@ -74,8 +74,7 @@ WHERE
     WHERE S_DATE <= t1.trad_date 
       AND E_DATE > t1.trad_date)
   AND SHDR_ACCT <> '0899999004' --中国证券登记结算深圳分公司证券集中交收账户
-  AND SUBSTR(CAST(SEC_CDE+1000000 AS VARCHAR(7)),2) IN
-    (SELECT SEC_CDE FROM VT_ABNO_SZSE_SEC)
+  AND t1.SEC_CDE = CAST(t3.SEC_CDE AS INT)
 GROUP BY 1,2,3
 ) RSLT
 GROUP BY 1,2,3,4,10
@@ -102,34 +101,32 @@ FROM (
 select 		
    t1.shdr_acct  as SHDR_ACCT
   ,'1'          as MKT_SORT
-  ,SUBSTR(CAST(t1.SEC_CDE+1000000 AS VARCHAR(7)),2) AS SEC_CDE
+  ,t3.SEC_CDE AS SEC_CDE
   ,SUM(CASE WHEN chg_vol>0 THEN t1.chg_vol ELSE 0 END) AS buy_qty--买               
   ,SUM(CASE WHEN chg_vol<0 THEN ABS(t1.chg_vol) ELSE 0 END) AS sal_qty --卖 
 from nsoview.CSDC_S_SHDR_HLD_CHG t1,
-    VT_ABNO_SEC_ACCT t2
+    VT_ABNO_SEC_ACCT t2, VT_ABNO_SZSE_SEC t3
 where t1.shdr_acct = t2.sec_acct
   and t1.chg_cde in ( 'A0A','AOC','A4A','A69','A72','A76','A77','A89','R04','R05','R06')                               
   and t1.chg_date BETWEEN CAST('$PARAM{'s_date'}' AS DATE FORMAT 'YYYYMMDD') 
                    AND CAST('$PARAM{'e_date'}' AS DATE FORMAT 'YYYYMMDD')  
-  and t1.SEC_CDE IN
-   (SELECT SEC_CDE FROM VT_ABNO_SZSE_SEC)
+  and t1.SEC_CDE = CAST(t3.SEC_CDE AS INT)
   group by 1,2,3
   union all
 --2017年5月后计算方法
 select 		
   t1.shdr_acct  as SHDR_ACCT
   ,'1'          as MKT_SORT
-  ,SUBSTR(CAST(cast(t1.SEC_CDE as INTEGER)+1000000 AS VARCHAR(7)),2) AS SEC_CDE
+  ,t3.SEC_CDE AS SEC_CDE
   ,SUM(CASE WHEN chg_vol>0 THEN chg_vol ELSE 0 END) AS buy_qty--买               
   ,SUM(CASE WHEN chg_vol<0 THEN ABS(chg_vol) ELSE 0 END) AS sal_qty --卖 
 from   nsoview.CSDC_S_STK_CHG t1,
-    VT_ABNO_SEC_ACCT t2
+    VT_ABNO_SEC_ACCT t2, VT_ABNO_SZSE_SEC t3
 where t1.shdr_acct = t2.sec_acct
   and t1.chg_cde in ( 'A0A','AOC','A4A','A69','A72','A76','A77','A89','R04','R05','R06')                               
   and t1.chg_date BETWEEN CAST('$PARAM{'s_date'}' AS DATE FORMAT 'YYYYMMDD') 
                    AND CAST('$PARAM{'e_date'}' AS DATE FORMAT 'YYYYMMDD')  
-  and t1.SEC_CDE IN
-   (SELECT SEC_CDE FROM VT_ABNO_SZSE_SEC) 
+  and t1.SEC_CDE = t3.SEC_CDE
   group by 1,2,3
 ) RSLT
 GROUP BY 1,2,3,4,10
@@ -154,7 +151,7 @@ SELECT
 FROM (
 select 
   CAST(aa.SEC_ACCT_NBR  AS CHAR(10))as SHDR_ACCT,
-  CAST(aa.SEC_CDE AS CHAR(6))  AS  SEC_CDE,             
+  aa.SEC_CDE  AS  SEC_CDE,             
   CAST(sum(aa.TD_END_HOLD_VOL)  AS DECIMAL(18,0) )as BUY_QTY,
   0 as SAL_QTY,
   CAST(sum(aa.TD_END_HOLD_VOL*bb.ISS_PRC) AS DECIMAL(18,0) ) AS BUY_AMT,
@@ -173,12 +170,12 @@ select
   INNER JOIN
     VT_ABNO_SEC_ACCT cc
   on aa.sec_acct_nbr = cc.sec_acct
+  INNER JOIN VT_ABNO_SZSE_SEC dd
+  on aa.SEC_CDE = dd.SEC_CDE
   WHERE bb.LIST_LAST_DATE BETWEEN CAST('$PARAM{'s_date'}' AS DATE FORMAT 'YYYYMMDD') 
                    AND CAST('$PARAM{'e_date'}' AS DATE FORMAT 'YYYYMMDD')  
     AND aa.s_date <= CAST(bb.LIST_LAST_DATE AS DATE FORMAT 'YYYYMMDD') 
     AND aa.e_date >CAST(bb.LIST_LAST_DATE AS DATE FORMAT 'YYYYMMDD')
-	AND aa.SEC_CDE IN 
-      (SELECT SEC_CDE FROM VT_ABNO_SZSE_SEC) 
 	and aa.MKT_SORT ='1'
 	group by 1,2
 ) RSLT
@@ -214,15 +211,17 @@ sel
   0 AS SAL_AMT
 from 
   (
-   sel shdr_acct, chg_date,sec_cde ,chg_vol 
+   sel shdr_acct, chg_date,t2.sec_cde ,chg_vol 
    from  
-     nsoview.CSDC_S_SHDR_HLD_CHG t1 
+     nsoview.CSDC_S_SHDR_HLD_CHG t1, VT_ABNO_SZSE_SEC t2, VT_ABNO_SEC_ACCT t3
    where  chg_date BETWEEN CAST('$PARAM{'s_date'}' AS DATE FORMAT 'YYYYMMDD') 
                    AND CAST('$PARAM{'e_date'}' AS DATE FORMAT 'YYYYMMDD')  
      and chg_cde ='A30'
 	 and STK_CHRC <> '02'
 	 AND SHDR_ACCT <> '0899999004'
-   )  t1 INNER JOIN 		
+	 and t1.shdr_acct = t3.sec_acct
+	 and t1.sec_cde = CAST(t2.SEC_CDE AS INT)
+   )  t1 INNER JOIN
   (	
    SELECT A.STK_CDE,A.FI_LIST_DATE,A.ISS_PRC,MAX(calendar_date) AS LIST_LAST_DATE ,MAX(ISS_PRC)  AS FIN_ISS_PRC
    FROM NSOVIEW.szse_stk_fi_info A, 
@@ -233,14 +232,9 @@ from
                    AND CAST('$PARAM{'e_date'}' AS DATE FORMAT 'YYYYMMDD')   
    group by 1,2,3
    ) t2 
-   on t1.sec_cde =t2.STK_CDE
+   on t1.sec_cde = t2.STK_CDE
    and t1.chg_date = t2.LIST_LAST_DATE
-   inner join
-    VT_ABNO_SEC_ACCT t3
-	on t1.shdr_acct = t3.sec_acct
-   where  t2.STK_CDE  IN 
-      (SELECT SEC_CDE FROM VT_ABNO_SZSE_SEC) 
-    group  by 1,2,3,4,5
+   group  by 1,2,3,4,5
 union all
 -- 五月份后定向增发，不含股权激励
 sel 
@@ -255,13 +249,15 @@ sel
   0 AS SAL_AMT
 from 
   (
-   sel shdr_acct, chg_date,sec_cde ,chg_vol from  
-	   nsoview.CSDC_S_STK_CHG t1 
+   sel shdr_acct, chg_date, t2.sec_cde ,chg_vol from  
+	   nsoview.CSDC_S_STK_CHG t1, VT_ABNO_SZSE_SEC t2, VT_ABNO_SEC_ACCT t3
 	   where  chg_date BETWEEN CAST('$PARAM{'s_date'}' AS DATE FORMAT 'YYYYMMDD') 
                    AND CAST('$PARAM{'e_date'}' AS DATE FORMAT 'YYYYMMDD')  
 	     and chg_cde ='A44'
 	     and STK_CHRC <> '02'
 		 AND SHDR_ACCT <> '0899999004'
+		 and t1.shdr_acct = t3.sec_acct
+		 and t1.sec_cde = t2.SEC_CDE
    )  t1 
    INNER JOIN 
   (	
@@ -276,12 +272,6 @@ from
    ) t2 
    on t1.sec_cde =t2.STK_CDE
    and t1.chg_date = t2.LIST_LAST_DATE
-   inner join 
-    VT_ABNO_SEC_ACCT t3
-	on t1.shdr_acct = t3.sec_acct
-  where  t2.STK_CDE  IN 
-      (SELECT SEC_CDE FROM VT_ABNO_SZSE_SEC) 
-   AND t1.sec_cde IS NOT  NULL
    group  by 1,2,3,4,5
 ) RSLT
 GROUP BY 1,2,3,4,10;
@@ -306,24 +296,23 @@ FROM (
 -- 股权激励五月份前，取chg_date当日的市值价格乘以BUY_QTY，计算买入价格
 sel 
   t1.shdr_acct, t1.chg_date,
-  substr(CAST(1000000+t1.SEC_CDE AS CHAR(7)),2,6) AS SEC_CDE,
+  t4.sec_cde AS SEC_CDE,
   sum(t1.chg_vol) AS BUY_QTY,
   sum(t1.chg_vol * t2.CLS_PRC) as BUY_AMT,
   0 AS SAL_QTY,
   0 AS SAL_AMT
 from 
   nsoview.CSDC_S_SHDR_HLD_CHG t1 , CMSSVIEW.SEC_QUOT t2, 
-  VT_ABNO_SEC_ACCT t3
+  VT_ABNO_SEC_ACCT t3, VT_ABNO_SZSE_SEC t4
 where chg_date BETWEEN CAST('$PARAM{'s_date'}' AS DATE FORMAT 'YYYYMMDD') 
                    AND CAST('$PARAM{'e_date'}' AS DATE FORMAT 'YYYYMMDD') 
   and chg_cde ='A30'
   and STK_CHRC = '02' 
   AND SHDR_ACCT <> '0899999004'
-  and substr(CAST(1000000+t1.SEC_CDE AS CHAR(7)),2,6) = t2.sec_cde
+  and t4.sec_cde = t2.sec_cde
   and t1.chg_date = t2.trad_date
-  and t2.sec_cde in
-      (SELECT SEC_CDE FROM VT_ABNO_SZSE_SEC)
   and t1.shdr_acct = t3.sec_acct
+  and t1.sec_cde = CAST(t4.sec_cde as int)
 group  by 1,2,3
 union all
 -- 股权激励五月份后，取chg_date当日的市值价格乘以BUY_QTY，计算买入价格
@@ -337,7 +326,7 @@ sel
   0 AS SAL_AMT
 from 
   nsoview.CSDC_S_STK_CHG t1  , CMSSVIEW.SEC_QUOT t2, 
-  VT_ABNO_SEC_ACCT t3
+  VT_ABNO_SEC_ACCT t3, VT_ABNO_SZSE_SEC t4
 where chg_date BETWEEN CAST('$PARAM{'s_date'}' AS DATE FORMAT 'YYYYMMDD') 
                    AND CAST('$PARAM{'e_date'}' AS DATE FORMAT 'YYYYMMDD') 
   and chg_cde ='A44'
@@ -345,8 +334,7 @@ where chg_date BETWEEN CAST('$PARAM{'s_date'}' AS DATE FORMAT 'YYYYMMDD')
   AND SHDR_ACCT <> '0899999004'
   and t1.SEC_CDE = t2.sec_cde
   and t1.chg_date = t2.trad_date
-  and t1.sec_cde in
-      (SELECT SEC_CDE FROM VT_ABNO_SZSE_SEC)
+  and t1.sec_cde = t4.sec_cde
   and t1.shdr_acct = t3.sec_acct
   group  by 1,2,3
 ) RSLT
@@ -372,7 +360,7 @@ FROM (
  SEL 
  t1.shdr_acct,
  t1.chg_date,
- t2.CONV_SEC_CDE as sec_cde,
+ t1.sec_cde as sec_cde,
  t2.RIGHT_ARRV_DATE,
  t2.SUBSC_PRC,
  SUM(t1.chg_vol) AS BUY_QTY,
@@ -381,21 +369,19 @@ FROM (
  0 AS SAL_AMT
  FROM 
  (
- SEL * 
- FROM nsoview.CSDC_S_SHDR_HLD_CHG a
+ SEL a.shdr_acct, a.chg_date, a.chg_vol, c.sec_cde 
+ FROM nsoview.CSDC_S_SHDR_HLD_CHG a,  VT_ABNO_SEC_ACCT b, VT_ABNO_SZSE_SEC c
  WHERE  a.chg_cde='A42'
  AND chg_date BETWEEN CAST('$PARAM{'s_date'}' AS DATE FORMAT 'YYYYMMDD') 
                    AND CAST('$PARAM{'e_date'}' AS DATE FORMAT 'YYYYMMDD') 
+ and a.shdr_acct = b.sec_acct
+ and a.sec_cde = cast(c.sec_cde as int)
  ) t1,
- nsoview.csdc_s_right_prmt_his t2,
- VT_ABNO_SEC_ACCT t3
- WHERE CAST(t2.CONV_SEC_CDE AS CHAR(6)) =SUBSTR(CAST(1000000+CAST(t1.sec_cde AS INT) AS CHAR(7)),2)
+ nsoview.csdc_s_right_prmt_his t2
+ WHERE t2.CONV_SEC_CDE = t1.sec_cde
    AND t1.chg_date = t2.RIGHT_ARRV_DATE 
-   AND t1.shdr_acct = t3.sec_acct
    AND t2.SUBSC_PRC <>0
-   AND t2.E_DATE ='30001231'
-   AND t2.CONV_SEC_CDE IN 
-		(SELECT SEC_CDE FROM VT_ABNO_SZSE_SEC)
+   AND t2.E_DATE =cast('30001231' as date format 'YYYYMMDD')
  GROUP BY 1,2,3,4,5
  UNION ALL
  SEL t1.shdr_acct, 
@@ -409,21 +395,19 @@ FROM (
 	0 AS SAL_AMT
  FROM 
  (
- SEL * 
- FROM nsoview.CSDC_S_stk_chg a
+ SEL a.shdr_acct, a.chg_date, a.chg_vol, c.sec_cde  
+ FROM nsoview.CSDC_S_stk_chg a,  VT_ABNO_SEC_ACCT b, VT_ABNO_SZSE_SEC c
  WHERE   a.chg_cde='A42'
  AND chg_date BETWEEN CAST('$PARAM{'s_date'}' AS DATE FORMAT 'YYYYMMDD') 
                    AND CAST('$PARAM{'e_date'}' AS DATE FORMAT 'YYYYMMDD') 
+ and a.shdr_acct = b.sec_acct
+ and a.sec_cde = c.sec_cde
  ) t1,
- nsoview.csdc_s_right_prmt_his t2,
- VT_ABNO_SEC_ACCT t3 
- WHERE CAST(t2.CONV_SEC_CDE AS CHAR(6))  =SUBSTR(CAST(1000000+CAST(t1.sec_cde AS INT) AS CHAR(7)),2)
+ nsoview.csdc_s_right_prmt_his t2
+ WHERE t2.CONV_SEC_CDE = t1.sec_cde
    AND t1.chg_date = t2.RIGHT_ARRV_DATE 
-   AND t1.shdr_acct = t3.sec_acct
    AND t2.SUBSC_PRC <>0
-   AND t2.E_DATE ='30001231'
-   AND t2.CONV_SEC_CDE IN 
-		(SELECT SEC_CDE FROM VT_ABNO_SZSE_SEC)
+   AND t2.E_DATE =cast('30001231' as date format 'YYYYMMDD')
  GROUP BY 1,2,3,4,5
  ) RSLT
 GROUP BY 1,2,3,4,10;
@@ -448,38 +432,36 @@ FROM (
 select 		
    a.shdr_acct  as SHDR_ACCT
   ,'1'          as MKT_SORT
-  ,substr(CAST(1000000+a.SEC_CDE AS CHAR(7)),2,6) AS SEC_CDE
+  ,c.sec_cde AS SEC_CDE
   ,sum(a.chg_vol) as BUY_QTY
   ,0 AS BUY_AMT
   ,0 AS SAL_QTY
   ,0 AS SAL_AMT
 from   nsoview.CSDC_S_SHDR_HLD_CHG a, 
-  VT_ABNO_SEC_ACCT b
+  VT_ABNO_SEC_ACCT b, VT_ABNO_SZSE_SEC c
 where a.chg_cde in ( 'A40','A39')                               
   and a.chg_date BETWEEN CAST('$PARAM{'s_date'}' AS DATE FORMAT 'YYYYMMDD') 
                    AND CAST('$PARAM{'e_date'}' AS DATE FORMAT 'YYYYMMDD')
   and a.shdr_acct = b.sec_acct
-  and substr(CAST(1000000+a.SEC_CDE AS CHAR(7)),2,6) in 
-  		(SELECT SEC_CDE FROM VT_ABNO_SZSE_SEC)
+  and a.sec_cde = cast(c.sec_cde as int)
   group by 1,2,3
 union all
 --深交所（送股、转增）2017年5月份后
 select 		
   a.shdr_acct  as SHDR_ACCT
   ,'1'          as MKT_SORT
-  ,a.SEC_CDE
+  ,c.SEC_CDE
   ,sum(a.chg_vol) as BUY_QTY
   ,0 AS BUY_AMT
   ,0 AS SAL_QTY
   ,0 AS SAL_AMT
 from   nsoview.CSDC_S_STK_CHG a,
-  VT_ABNO_SEC_ACCT b 
+  VT_ABNO_SEC_ACCT b, VT_ABNO_SZSE_SEC c 
 where a.chg_cde in ( 'A40','A39')                               
   and a.chg_date BETWEEN CAST('$PARAM{'s_date'}' AS DATE FORMAT 'YYYYMMDD') 
                    AND CAST('$PARAM{'e_date'}' AS DATE FORMAT 'YYYYMMDD')
   and a.shdr_acct = b.sec_acct
-  and substr(CAST(1000000+a.SEC_CDE AS CHAR(7)),2,6) in 
-  		(SELECT SEC_CDE FROM VT_ABNO_SZSE_SEC)
+  and a.sec_cde = c.sec_cde
 group by 1,2,3
  ) RSLT
 GROUP BY 1,2,3,4,10;
@@ -513,13 +495,15 @@ SEL
   ,t2.BEF_TAX_RATE_NUMRT/t2.BEF_TAX_RATE_DENOM* hld_vol AS SAL_AMT
 FROM
 (
-  SEL a.* FROM  
+  SEL a.sec_acct_nbr, a.td_end_hold_vol, a.sec_cde, a.s_date, a.e_date 
+  FROM  
   NSPVIEW.ACT_SEC_HOLD_HIS a, 
-  VT_ABNO_SEC_ACCT b 
+  VT_ABNO_SEC_ACCT b, VT_ABNO_SZSE_SEC c
   where MKT_SORT = '1' 
     AND S_DATE <= CAST('$PARAM{'e_date'}' AS DATE FORMAT 'YYYYMMDD')
     AND E_DATE > CAST('$PARAM{'s_date'}' AS DATE FORMAT 'YYYYMMDD') 
 	and a.sec_acct_nbr = b.sec_acct
+	and a.sec_cde = c.sec_cde
 )  t1
 RIGHT JOIN
 (
@@ -572,22 +556,22 @@ FROM (
 	a.shdr_acct
     ,a.PRCS_DATE
 	,b.CONV_PRC AS CONV_PRC
-	,substr(CAST(1000000+b.SEC_CDE AS CHAR(7)),2,6) AS SEC_CDE
+	,d.sec_cde AS SEC_CDE
     ,sum(a.conv_vol) as BUY_QTY
 	,SUM(a.conv_vol*b.CONV_PRC) AS BUY_AMT
 	,0 AS SAL_QTY
 	,0 AS SAL_AMT
 from nsodata.CSDC_S_CONV_BOND_TRAD  a
 inner join nsodata.CSDC_S_CONV_BOND_REG  b
-        on  a.CONV_BOND_CDE=cast(b.CONV_BOND_CDE as integer)
+        on  a.CONV_BOND_CDE = b.CONV_BOND_CDE
        and b.s_date<= a.PRCS_DATE and b.e_date> a.PRCS_DATE
 inner join VT_ABNO_SEC_ACCT c
 	   on a.shdr_acct = c.sec_acct
+inner join VT_ABNO_SZSE_SEC d
+		on b.sec_cde = cast(d.sec_cde as int)
 where a.BIZ_SORT in ('30','31','32')  --30 可转债转股，31可转债有条件强制转股，32可转债无条件强制转股
   and a.PRCS_DATE BETWEEN CAST('$PARAM{'s_date'}' AS DATE FORMAT 'YYYYMMDD') 
                    AND CAST('$PARAM{'e_date'}' AS DATE FORMAT 'YYYYMMDD')
-  and substr(CAST(1000000+b.SEC_CDE AS CHAR(7)),2,6) in 
-       (SELECT SEC_CDE FROM VT_ABNO_SZSE_SEC)
 group by 1,2,3,4
 union all
 --深市2017年5月之后
@@ -600,7 +584,7 @@ sel t1.shdr_acct,
 	0 as SAL_QTY,
 	0 as SAL_AMT
 from NSOVIEW.CSDC_S_DTL_RESULT t1, CMSSVIEW.SEC_QUOT t2,
-  VT_ABNO_SEC_ACCT t3
+  VT_ABNO_SEC_ACCT t3, VT_ABNO_SZSE_SEC t4
 where 
 	BIZ_SORT='ZQZG'  
 	AND t1.TRAD_DATE BETWEEN CAST('$PARAM{'s_date'}' AS DATE FORMAT 'YYYYMMDD') 
@@ -608,8 +592,7 @@ where
 	and t1.sec_cde = t2.sec_cde
 	and t1.trad_date = t2.trad_date
 	and t1.shdr_acct = t3.sec_acct
-	and t1.SEC_CDE  IN 
-  		(SELECT SEC_CDE FROM VT_ABNO_SZSE_SEC)
+	and t1.SEC_CDE = t4.sec_cde
 	AND  SETL_INDC='Y'
     AND SETL_VOL>0
 	--and STK_CHRC<>'02'  --'00'：无限售流通股；'01'：IPO后限售股；'02'：股权激励限售股；'05'：IPO前限售股。
@@ -637,14 +620,14 @@ FROM (
 SELECT
    t1.SHDR_ACCT
   ,t1.CHG_DATE AS CHG_DATE
-  ,substr(CAST(1000000+t1.SEC_CDE AS CHAR(7)),2,6) AS SEC_CDE
+  ,t4.sec_cde AS SEC_CDE
   ,SUM(CASE WHEN chg_vol>0 THEN t1.chg_vol ELSE 0 END) AS BUY_QTY         -- 申购       
   ,SUM(CASE WHEN chg_vol>0 THEN t1.chg_vol*t2.cls_prc ELSE 0 END) AS BUY_AMT         -- 申购       
   ,SUM(CASE WHEN chg_vol<0 THEN ABS(t1.chg_vol) ELSE 0 END) AS SAL_QTY    -- 赎回
   ,SUM(CASE WHEN chg_vol<0 THEN ABS(t1.chg_vol*t2.cls_prc) ELSE 0 END) AS SAL_AMT    -- 赎回
 FROM
    nsoview.CSDC_S_SHDR_HLD_CHG t1, CMSSVIEW.SEC_QUOT t2,
-  VT_ABNO_SEC_ACCT t3
+  VT_ABNO_SEC_ACCT t3, VT_ABNO_SZSE_SEC t4
 WHERE
    CHG_DATE BETWEEN CAST('$PARAM{'s_date'}' AS DATE FORMAT 'YYYYMMDD') 
                    AND CAST('$PARAM{'e_date'}' AS DATE FORMAT 'YYYYMMDD')
@@ -652,9 +635,8 @@ WHERE
    AND t1.SHDR_ACCT <> '0899999004' --中国证券登记结算深圳分公司证券集中交收账户
    and t1.shdr_acct = t3.sec_acct
    and t1.chg_date = t2.trad_date
-   and substr(CAST(1000000+t1.SEC_CDE AS CHAR(7)),2,6) = t2.sec_cde
-   and t2.sec_cde in
-  		(SELECT SEC_CDE FROM VT_ABNO_SZSE_SEC)
+   and t1.SEC_CDE = cast(t4.sec_cde as int)
+   and t2.sec_cde = t4.sec_cde
    GROUP BY 1,2,3
  ) RSLT
 GROUP BY 1,2,3,4,10;
