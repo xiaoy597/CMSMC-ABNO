@@ -1,0 +1,13 @@
+安装步骤
+========
+
+1、将abno_incm.pl拷贝到/home/tomcat/cmss/script目录下，并修改文件中的以下变量，
+
+$MAIN_PARAM{"HOSTNM"} = "此处填写数据库节点名称";
+$MAIN_PARAM{"USERNM"} = "此处填写数据库用户名称";
+$MAIN_PARAM{"PASSWD"} = "此处填写数据库用户口令";
+
+2、将sql-template目录拷贝到/home/tomcat/cmss/work目录下。
+
+3、执行abno-ddl.sql创建异常收益计算需要的表。
+
