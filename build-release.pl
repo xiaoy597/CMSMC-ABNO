@@ -5,11 +5,12 @@ use File::Copy;
 use File::Copy::Recursive qw(dircopy);
 use Time::localtime;
 use File::Path;
+use Archive::Zip  qw( :ERROR_CODES :CONSTANTS );
 
 my $tc = localtime(time());
 my $time = sprintf("%4d%02d%02d", $tc->year + 1900, $tc->mon + 1, $tc->mday);
 
-unlink('target') if (-e 'target');
+rmtree('target') if (-e 'target');
 
 my $release_dir = "target/release-$time";
 
@@ -58,4 +59,8 @@ close($script_out_fh);
 rename("$release_dir/abno_incm.pl.new", "$release_dir/abno_incm.pl");
 
 chdir('target');
-system('c:\"program files"\7-zip\7z a ' . "abno-$time.zip" . " release-$time");
+
+my $zip = Archive::Zip::Archive->new();
+
+$zip->addTree("release-$time", "release-$time");
+die "Save zip file failed." unless ($zip->writeToFileNamed("abno-$time.zip") == AZ_OK);
