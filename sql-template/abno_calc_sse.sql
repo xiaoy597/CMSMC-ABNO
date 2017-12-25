@@ -558,6 +558,8 @@ FROM
 ON t1.SEC_CDE = t2.SEC_CDE
   AND t1.S_DATE <= t2.reg_date
   AND t1.E_DATE > t2.reg_date
+WHERE
+  t1.MKT_SORT = '0'
 group by 1,2,3,4,5
 ) RSLT
 GROUP BY 1,2,3,4,5,10;
@@ -647,6 +649,7 @@ INNER JOIN
   ON t1.SEC_CDE =t2.SEC_CDE
   AND t1.S_DATE <= t2.reg_date
   AND t1.E_DATE > t2.reg_date
+  AND t1.MKT_SORT = '0'
 group by 1,2,3,4
 ) RSLT
 GROUP BY 1,2,3,4,5,10;
@@ -841,6 +844,7 @@ AND T3.S_DATE <= T2.CALC_S_DATE
 AND T3.E_DATE > T2.CALC_S_DATE
 AND T4.S_DATE <= T2.CALC_E_DATE
 AND T4.E_dATE > T2.CALC_E_DATE
+AND T3.MKT_SORT = '0'
 ) RSLT
 ;
 
