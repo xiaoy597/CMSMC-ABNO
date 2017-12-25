@@ -561,8 +561,8 @@ FROM (
 	,SUM(a.conv_vol*b.CONV_PRC) AS BUY_AMT
 	,0 AS SAL_QTY
 	,0 AS SAL_AMT
-from nsodata.CSDC_S_CONV_BOND_TRAD  a
-inner join nsodata.CSDC_S_CONV_BOND_REG  b
+from nsoview.CSDC_S_CONV_BOND_TRAD  a
+inner join nsoview.CSDC_S_CONV_BOND_REG  b
         on  a.CONV_BOND_CDE = b.CONV_BOND_CDE
        and b.s_date<= a.PRCS_DATE and b.e_date> a.PRCS_DATE
 inner join VT_ABNO_SEC_ACCT c
