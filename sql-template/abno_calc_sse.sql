@@ -255,6 +255,7 @@ from (
     and a.TRANS_DATE = b.TRAD_DATE
     and a.SEC_CDE = CAST(b.SEC_CDE AS INT)
     and a.ata = c.sec_acct
+	and b.SEC_EXCH_CDE = '0'
     group by 1,2,3
     ) t1
   FULL JOIN
@@ -278,6 +279,7 @@ from (
     and b.TRANS_DATE = a.TRAD_DATE
     and b.SEC_CDE = CAST(a.SEC_CDE AS INT)
     and b.in_acct = c.sec_acct
+	and a.SEC_EXCH_CDE = '0'
    group by 1,2,3
   ) t2
   on t1.SHDR_ACCT = t2.SHDR_ACCT
@@ -442,6 +444,7 @@ WHERE a.CAP_TYPE ='XL'
   AND A.TRAD_DATE = B.TRAD_DATE
   AND A.SEC_CDE = B.SEC_CDE
   AND A.SHDR_ACCT = C.SEC_ACCT
+  AND b.SEC_EXCH_CDE = '0'
 group by 1,2,3
 ) RSLT
 GROUP BY 1,2,3,4,5,10;
@@ -753,6 +756,7 @@ WHERE
     AND k1.SEC_CDE  = CAST(t5.SEC_CDE AS INT)
     AND k1.trad_date = t4.trad_date
     AND t5.sec_cde = t4.sec_cde
+	AND t4.SEC_EXCH_CDE = '0'
 GROUP BY 1,2,3
 ) RSLT
 GROUP BY 1,2,3,4,5,10;
@@ -811,7 +815,8 @@ FROM
   FROM
     (
       SELECT SEC_CDE, MIN(TRAD_DATE) MIN_TRAD_DATE, MAX(TRAD_DATE) MAX_TRAD_DATE 
-      FROM CMSSVIEW.SEC_QUOT 
+      FROM CMSSVIEW.SEC_QUOT
+	  WHERE SEC_EXCH_CDE = '0'
       GROUP BY SEC_CDE
     ) TA,
     (
@@ -833,6 +838,8 @@ WHERE TT1.SEC_CDE = TT2.SEC_CDE
 AND TT1.SEC_CDE = TT3.SEC_CDE
 AND TT1.CALC_S_DATE = TT2.TRAD_DATE
 AND TT1.CALC_E_DATE = TT3.TRAD_DATE
+AND TT2.SEC_EXCH_CDE = '0'
+AND TT3.SEC_EXCH_CDE = '0'
 ) T2, 
 NSPVIEW.ACT_SEC_HOLD_HIS T3, NSPVIEW.ACT_SEC_HOLD_HIS T4
 WHERE T1.SEC_CDE = T2.SEC_CDE

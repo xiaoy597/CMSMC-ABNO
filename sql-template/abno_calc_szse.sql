@@ -313,6 +313,7 @@ where chg_date BETWEEN CAST('$PARAM{'s_date'}' AS DATE FORMAT 'YYYYMMDD')
   and t1.chg_date = t2.trad_date
   and t1.shdr_acct = t3.sec_acct
   and t1.sec_cde = CAST(t4.sec_cde as int)
+  and t2.SEC_EXCH_CDE = '1'
 group  by 1,2,3
 union all
 -- 股权激励五月份后，取chg_date当日的市值价格乘以BUY_QTY，计算买入价格
@@ -336,6 +337,7 @@ where chg_date BETWEEN CAST('$PARAM{'s_date'}' AS DATE FORMAT 'YYYYMMDD')
   and t1.chg_date = t2.trad_date
   and t1.sec_cde = t4.sec_cde
   and t1.shdr_acct = t3.sec_acct
+  and t2.SEC_EXCH_CDE = '1'
   group  by 1,2,3
 ) RSLT
 GROUP BY 1,2,3,4,10;
@@ -595,6 +597,7 @@ where
 	and t1.SEC_CDE = t4.sec_cde
 	AND  SETL_INDC='Y'
     AND SETL_VOL>0
+	AND t2.SEC_EXCH_CDE = '1'
 	--and STK_CHRC<>'02'  --'00'：无限售流通股；'01'：IPO后限售股；'02'：股权激励限售股；'05'：IPO前限售股。
 	 -- and substr(CSTD_UNIT,1,3) != '999' --999是质押业务托管单元，需要去掉
 	group by 1,2,3,4
@@ -637,6 +640,7 @@ WHERE
    and t1.chg_date = t2.trad_date
    and t1.SEC_CDE = cast(t4.sec_cde as int)
    and t2.sec_cde = t4.sec_cde
+   and t2.SEC_EXCH_CDE = '1'
    GROUP BY 1,2,3
  ) RSLT
 GROUP BY 1,2,3,4,10;
@@ -695,7 +699,8 @@ FROM
   FROM
     (
       SELECT SEC_CDE, MIN(TRAD_DATE) MIN_TRAD_DATE, MAX(TRAD_DATE) MAX_TRAD_DATE 
-      FROM CMSSVIEW.SEC_QUOT 
+      FROM CMSSVIEW.SEC_QUOT
+	  WHERE SEC_EXCH_CDE = '1'
       GROUP BY SEC_CDE
     ) TA,
     (
@@ -717,6 +722,8 @@ WHERE TT1.SEC_CDE = TT2.SEC_CDE
 AND TT1.SEC_CDE = TT3.SEC_CDE
 AND TT1.CALC_S_DATE = TT2.TRAD_DATE
 AND TT1.CALC_E_DATE = TT3.TRAD_DATE
+AND TT2.SEC_EXCH_CDE = '1'
+AND TT3.SEC_EXCH_CDE = '1'
 ) T2, 
 NSPVIEW.ACT_SEC_HOLD_HIS T3, NSPVIEW.ACT_SEC_HOLD_HIS T4
 WHERE T1.SEC_CDE = T2.SEC_CDE
