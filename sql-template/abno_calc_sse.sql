@@ -13,6 +13,7 @@ CREATE VOLATILE MULTISET TABLE VT_ABNO_SSE_SEC AS(
 	AND B.S_DATE <= CAST('$PARAM{'e_date'}' AS DATE FORMAT 'YYYYMMDD')
 	AND B.E_DATE > CAST('$PARAM{'e_date'}' AS DATE FORMAT 'YYYYMMDD')
 	AND B.MKT_SORT = '0'
+	AND B.SEC_CTG = '11'
 ) WITH DATA UNIQUE PRIMARY INDEX (SEC_CDE)
 ON COMMIT PRESERVE ROWS;
 
@@ -25,7 +26,7 @@ COLLECT STATISTICS COLUMN SEC_CDE ON VT_ABNO_SSE_SEC;
 CREATE VOLATILE MULTISET TABLE VT_ABNO_SEC_ACCT AS (
     SELECT PRMT_VAL AS SEC_ACCT 
     FROM $PARAM{'CMSSDB'}.ABNO_INCM_CALC_INVST
-    WHERE ABNO_INCM_CALC_BTCH = '$PARAM{'abno_incm_calc_btch'}' AND PRMT_TYPE = '1'
+    WHERE ABNO_INCM_CALC_BTCH = '$PARAM{'abno_incm_calc_btch'}' AND PRMT_TYPE = '2'
 ) WITH DATA UNIQUE PRIMARY INDEX (SEC_ACCT)
 ON COMMIT PRESERVE ROWS;
 
@@ -101,7 +102,7 @@ FROM NSOVIEW.CSDC_H_CLR_STM_DTL t1,
     WHERE S_DATE <= t1.TRAD_DATE
       AND E_DATE > t1.TRAD_DATE                  
       AND ACCT_SORT = 'RQ')
-  AND t1.SEC_CDE1 = CAST(t3.SEC_CDE AS INT)
+  AND substr(cast(1000000+t1.SEC_CDE1 as char(7)),2) = t3.SEC_CDE
   AND t1.SHDR_ACCT NOT IN ('B880810718','B880859746','B880969127','B880969135')  
   AND t1.SETL_VOL <> 0
   AND t1.RESULT_CDE IN ('0000')
@@ -177,7 +178,7 @@ FROM (
          AND a.SAL_SHDR_ACCT LIKE 'E%'
          AND SUBSTR(a.MEMO,2,1) IN ('6') --融券卖出'
          and a.sal_shdr_acct = c.sec_acct
-		 and a.SEC_CDE = cast(d.SEC_CDE AS INT)
+		 and substr(cast(1000000+a.SEC_CDE as char(7)),2) = d.SEC_CDE
        UNION ALL
        SELECT
           a.TRAD_DATE
@@ -192,16 +193,18 @@ FROM (
           AND a.B_SHR_ACCT LIKE 'E%'
           AND SUBSTR(a.MEMO,1,1) IN ('5','7')  --'买券还券'、'融券平仓'
           and a.b_shr_acct = c.sec_acct
-  		 and a.SEC_CDE = cast(d.SEC_CDE AS INT)
+  		 and substr(cast(1000000+a.SEC_CDE as char(7)),2) = d.SEC_CDE
 ) t1
 INNER JOIN NSOVIEW.CSDC_H_CLR_STM_DTL  t2
-  on  t2.data_date=t1.trad_date
+  on  t2.trad_date=t1.trad_date
   and t1.app_nbr=t2.APLY_NBR
   and t2.trad_nbr=t1.trad_nbr
   and t2.RESULT_CDE in ( '0000','8001')
   and t2.RCOD_TYPE in ('001','003')
+  and t2.trad_date between cast('$PARAM{'s_date'}' AS DATE format 'YYYYMMDD') 
+                   AND cast('$PARAM{'e_date'}' as DATE format 'YYYYMMDD')
 INNER JOIN VT_ABNO_SSE_SEC t3
-on t2.SEC_CDE1 = CAST(t3.SEC_CDE as INT)
+on substr(cast(1000000+t2.SEC_CDE1 as char(7)),2) = t3.SEC_CDE
 group by 1,2,3
 ) RSLT
 GROUP BY 1,2,3,4,10
@@ -241,7 +244,7 @@ from (
     ,SUM(a.TRANS_VOL) as SAL_QTY
     ,SUM(a.TRANS_VOL* (case when a.TRAN_PRC <> 0 then a.TRAN_PRC else b.CLS_PRC end)) AS SAL_AMT
     ,SUM(a.TRAN_FEE+a.STMP_TAX+a.CMSN_CHG) AS SAL_FEE_TAX --手续费算在转出方
-  FROM  nsOVIEW.CSDC_H_NON_TRAD_TRAN a, CMSSVIEW.SEC_QUOT b,
+  FROM  nsOVIEW.CSDC_H_NON_TRAD_TRAN a, $PARAM{'CMSSVIEW'}.SEC_QUOT b,
      VT_ABNO_SEC_ACCT c, VT_ABNO_SSE_SEC d
   WHERE a.cap_type in ('PT')
     AND NOT a.APLY_NBR LIKE '%WY%'
@@ -251,9 +254,9 @@ from (
     --and a.TRANS_RESN NOT IN ('I','J')   
     and a.TRANS_DATE between cast('$PARAM{'s_date'}' AS DATE format 'YYYYMMDD') 
                        AND cast('$PARAM{'e_date'}' as DATE format 'YYYYMMDD')
-    and a.sec_cde = CAST(d.SEC_CDE AS INT)
+    and substr(cast(1000000+a.sec_cde as char(7)),2) = d.SEC_CDE
     and a.TRANS_DATE = b.TRAD_DATE
-    and a.SEC_CDE = CAST(b.SEC_CDE AS INT)
+    and b.SEC_CDE = d.SEC_CDE
     and a.ata = c.sec_acct
 	and b.SEC_EXCH_CDE = '0'
     group by 1,2,3
@@ -265,7 +268,7 @@ from (
      ,b.TRANS_DATE
      ,SUM(b.TRANS_VOL) as BUY_QTY
      ,SUM(b.TRANS_VOL*(case when b.TRAN_PRC <> 0 then b.TRAN_PRC else a.CLS_PRC end)) AS BUY_AMT 
-   from NSOVIEW.CSDC_H_NON_TRAD_TRAN b,  CMSSVIEW.SEC_QUOT a,
+   from NSOVIEW.CSDC_H_NON_TRAD_TRAN b,  $PARAM{'CMSSVIEW'}.SEC_QUOT a,
    VT_ABNO_SEC_ACCT c, VT_ABNO_SSE_SEC d
    where b.cap_type in ('PT') ---同上，加上限制条件
      and NOT b.APLY_NBR LIKE '%WY%'
@@ -275,9 +278,9 @@ from (
      --and a.TRANS_RESN NOT IN ('I','J') --是否去掉'I'还券划转'J'余券划转还待确认
     and b.TRANS_DATE between cast('$PARAM{'s_date'}' AS DATE format 'YYYYMMDD') 
                        AND cast('$PARAM{'e_date'}' as DATE format 'YYYYMMDD')
-    and b.sec_cde = CAST(d.SEC_CDE AS INT)
+    and substr(cast(1000000+b.sec_cde as char(7)),2) = d.SEC_CDE
     and b.TRANS_DATE = a.TRAD_DATE
-    and b.SEC_CDE = CAST(a.SEC_CDE AS INT)
+    and b.SEC_CDE = d.SEC_CDE
     and b.in_acct = c.sec_acct
 	and a.SEC_EXCH_CDE = '0'
    group by 1,2,3
@@ -332,6 +335,7 @@ INNER JOIN
  WHERE
    C.calendar_date < B.LIST_DATE
    AND C.IS_TRD_DT='1'
+   AND B.SEC_EXCH_CDE = '0'
  GROUP BY 1,2
  ) t2
  ON  t1.SEC_CDE = t2.STK_CDE
@@ -387,7 +391,7 @@ from
     AND a.trad_date BETWEEN cast('$PARAM{'s_date'}' AS DATE format 'YYYYMMDD') 
                        AND cast('$PARAM{'e_date'}' as DATE format 'YYYYMMDD')
     AND a.shdr_acct = b.sec_acct
-	AND a.SEC_CDE = CAST(c.SEC_CDE AS INT)
+	AND substr(cast(1000000+a.SEC_CDE as char(7)),2) = c.SEC_CDE
   group by 1,2,3
 )  t1 
 inner  join 
@@ -432,7 +436,7 @@ SEL
   SUM(trans_vol * b.CLS_PRC) AS BUY_AMT,
   0 AS SAL_QTY,
   0 AS SAL_AMT
-FROM  nsOVIEW.CSDC_H_SEC_TRAN a, CMSSVIEW.SEC_QUOT b,
+FROM  nsOVIEW.CSDC_H_SEC_TRAN a, $PARAM{'CMSSVIEW'}.SEC_QUOT b,
   VT_ABNO_SEC_ACCT c, VT_ABNO_SSE_SEC d
 WHERE a.CAP_TYPE ='XL'
   AND a.NEGT_TYPE = 'C' 
@@ -440,9 +444,9 @@ WHERE a.CAP_TYPE ='XL'
   AND a.TRAD_DIRC ='B'
   AND a.trad_date BETWEEN cast('$PARAM{'s_date'}' AS DATE format 'YYYYMMDD') 
                        AND cast('$PARAM{'e_date'}' as DATE format 'YYYYMMDD')
-  AND a.SEC_CDE = CAST(d.SEC_CDE AS INT)
+  AND substr(cast(1000000+a.SEC_CDE as char(7)),2) = d.SEC_CDE
   AND A.TRAD_DATE = B.TRAD_DATE
-  AND A.SEC_CDE = B.SEC_CDE
+  AND d.SEC_CDE = B.SEC_CDE
   AND A.SHDR_ACCT = C.SEC_ACCT
   AND b.SEC_EXCH_CDE = '0'
 group by 1,2,3
@@ -480,7 +484,7 @@ FROM
 (
   SEL a.SHDR_ACCT, a.SEC_CDE, a.trad_date,TRAN_PRC,TRANS_VOL 
   FROM nsOVIEW.CSDC_H_SEC_TRAN a, 
-  VT_ABNO_SEC_ACCT c, VT_ABNO_SSE_SEC d
+  VT_ABNO_SEC_ACCT c
   WHERE a.TRANS_TYPE='00A'
     AND a.TRAD_DIRC='B'
     AND a.SHDR_ACCT NOT IN ('B880810718','B880859746','B880969127','B880969135') 
@@ -488,16 +492,16 @@ FROM
     AND a.trad_date BETWEEN cast('$PARAM{'s_date'}' AS DATE format 'YYYYMMDD') 
                        AND cast('$PARAM{'e_date'}' as DATE format 'YYYYMMDD')
     AND A.SHDR_ACCT = C.SEC_ACCT
-    AND a.sec_cde = CAST(d.SEC_CDE AS INT)
 ) t1
 INNER JOIN 
   (
     sel ISS_CDE
-	,SUBSTR(CAST(sec_cde + 1000000 AS CHAR(7)),2) SEC_CDE
+	,b.SEC_CDE
 	,EQUT_YEARS
 	,REG_DATE  
-    from  nsoview.CSDC_H_EQT_REG
+    from  nsoview.CSDC_H_EQT_REG a, VT_ABNO_SSE_SEC b
     where reg_sort= 'PG'
+	and SUBSTR(CAST(a.sec_cde + 1000000 AS CHAR(7)),2) = b.sec_cde
     group by 1,2,3,4
   )  t2 
    ON t1.SEC_CDE = t2.ISS_CDE
@@ -551,7 +555,7 @@ SELECT
 FROM
   nsoview.CSDC_H_EQT_REG t01, VT_ABNO_SSE_SEC t02
   WHERE t01.REG_SORT IN ('SG')
-    AND t01.sec_cde = CAST(t02.SEC_CDE AS INT)
+    AND substr(cast(1000000+t01.sec_cde as char(7)),2) = t02.SEC_CDE
     AND t01.RMAK_DESC NOT LIKE ('%对价%')
     AND t01.reg_date BETWEEN cast('$PARAM{'s_date'}' AS DATE format 'YYYYMMDD') 
                        AND cast('$PARAM{'e_date'}' as DATE format 'YYYYMMDD')
@@ -620,7 +624,7 @@ INNER JOIN
             FROM
                 nsoview.CSDC_H_EQT_REG  t1, VT_ABNO_SSE_SEC t2
             WHERE
-                t1.sec_cde = CAST(t2.SEC_CDE AS INT)
+                substr(cast(1000000+t1.sec_cde as char(7)),2) = t2.SEC_CDE
                 AND t1.EQUT_TYPE IN ('HL')
                 AND t1.RMAK_DESC NOT LIKE ('%对价%')
                 AND t1.reg_date BETWEEN cast('$PARAM{'s_date'}' AS DATE format 'YYYYMMDD') 
@@ -637,7 +641,7 @@ INNER JOIN
             FROM
                 nsoview.CSDC_H_EQT_REG t1, VT_ABNO_SSE_SEC t2
             WHERE
-                t1.sec_cde = CAST(t2.SEC_CDE AS INT)
+                substr(cast(1000000+t1.sec_cde as char(7)),2) = t2.SEC_CDE
                 AND t1.REG_SORT IN ('SG')
                 AND t1.RMAK_DESC NOT LIKE ('%对价%')
                 AND t1.reg_date BETWEEN cast('$PARAM{'s_date'}' AS DATE format 'YYYYMMDD') 
@@ -684,15 +688,13 @@ SELECT
   0 AS SAL_AMT FROM 
   (
     select t1.trad_date, t1.trad_nbr, t1.aply_nbr, t1.trad_time 
-	from  nsoview.csdc_h_sec_tran t1,
-     VT_ABNO_SEC_ACCT t3, VT_ABNO_SSE_SEC t4    
+	from  nsoview.csdc_h_sec_tran t1, VT_ABNO_SEC_ACCT t3 
     where TRANS_TYPE='00Y' 
       and CAP_TYPE='GZ' 
       and TRAD_DIRC='S'
       and TRAD_DATE BETWEEN cast('$PARAM{'s_date'}' AS DATE format 'YYYYMMDD') 
                        AND cast('$PARAM{'e_date'}' as DATE format 'YYYYMMDD') 
       and t1.shdr_acct = t3.sec_acct
-	  and t1.sec_cde = CAST(t4.SEC_CDE AS INT)
   )  a
   inner join 
  (
@@ -706,7 +708,7 @@ SELECT
      and TRAD_DATE BETWEEN cast('$PARAM{'s_date'}' AS DATE format 'YYYYMMDD') 
                        AND cast('$PARAM{'e_date'}' as DATE format 'YYYYMMDD') 
      and t1.shdr_acct = t3.sec_acct
-	 and t1.sec_cde = CAST(t4.SEC_CDE AS INT)
+	 and substr(cast(1000000+t1.sec_cde as char(7)),2) = t4.SEC_CDE
  ) b
 on  a.TRAD_DATE =b.TRAD_DATE
 and a.TRAD_NBR =b.TRAD_NBR
@@ -743,7 +745,7 @@ SELECT
 FROM
     NsoVIEW.CSDC_H_SEC_TRAN k1, --沪_证券成交表：dwbview.evt_h_trad_a_src
      VT_ABNO_SEC_ACCT t3,
-	 CMSSVIEW.SEC_QUOT t4,
+	 $PARAM{'CMSSVIEW'}.SEC_QUOT t4,
 	 VT_ABNO_SSE_SEC t5  
 WHERE
     cap_type = 'PT'
@@ -753,7 +755,7 @@ WHERE
     AND k1.trad_date BETWEEN cast('$PARAM{'s_date'}' AS DATE format 'YYYYMMDD') 
                        AND cast('$PARAM{'e_date'}' as DATE format 'YYYYMMDD')  
     AND k1.SHDR_ACCT NOT IN ('B880810718','B880859746','B880969127','B880969135') 
-    AND k1.SEC_CDE  = CAST(t5.SEC_CDE AS INT)
+    AND substr(cast(1000000+k1.SEC_CDE as char(7)),2)  = t5.SEC_CDE
     AND k1.trad_date = t4.trad_date
     AND t5.sec_cde = t4.sec_cde
 	AND t4.SEC_EXCH_CDE = '0'
@@ -766,37 +768,15 @@ GROUP BY 1,2,3,4,5,10;
 
 -- 股份变动差额补齐
 INSERT INTO $PARAM{'CMSSDB'}.MID_ABNO_INCM_CACL_DTL
-SELECT
-    '0' AS SEC_EXCH_CDE,
-    SHDR_ACCT AS SEC_ACCT,
-    SEC_CDE AS SEC_CDE,
-    '9999' AS BIZ_TYPE,
-    0 AS TAX_FEE,
-    BUY_QTY AS BUY_VOL,
-    SAL_QTY AS SAL_VOL,
-    BUY_AMT AS BUY_AMT,
-    SAL_AMT AS SAL_AMT,
-    '$PARAM{'abno_incm_calc_btch'}' AS ABNO_INCM_CALC_BTCH
-FROM 
-(
-SELECT 
-T1.SEC_CDE, 
-T1.SEC_ACCT AS SHDR_ACCT,
-CASE WHEN T4.TD_END_HOLD_VOL - T3.TD_END_HOLD_VOL > CHG_VOL THEN 
-	(T4.TD_END_HOLD_VOL - T3.TD_END_HOLD_VOL - T1.CHG_VOL)  ELSE 0 END AS BUY_QTY,
-CASE WHEN T4.TD_END_HOLD_VOL - T3.TD_END_HOLD_VOL > CHG_VOL THEN 
-	(T4.TD_END_HOLD_VOL - T3.TD_END_HOLD_VOL - T1.CHG_VOL) * CALC_S_PRC ELSE 0 END AS BUY_AMT,
-CASE WHEN T4.TD_END_HOLD_VOL - T3.TD_END_HOLD_VOL < CHG_VOL THEN 
-	(T1.CHG_VOL - (T4.TD_END_HOLD_VOL - T3.TD_END_HOLD_VOL))  ELSE 0 END AS SAL_QTY,
-CASE WHEN T4.TD_END_HOLD_VOL - T3.TD_END_HOLD_VOL < CHG_VOL THEN 
-	(T1.CHG_VOL - (T4.TD_END_HOLD_VOL - T3.TD_END_HOLD_VOL)) * CALC_E_PRC ELSE 0 END AS SAL_AMT
+with temp as (
+select t1.sec_cde, t1.sec_acct, t1.chg_vol, t2.calc_s_date, t2.calc_s_prc, t2.calc_e_date, t2.calc_e_prc
 FROM
 (
 	SELECT
 		SEC_CDE
 		,SEC_ACCT
 		,SUM(BUY_VOL - SAL_VOL) AS CHG_VOL
-	FROM CMSSDATA.MID_ABNO_INCM_CACL_DTL
+	FROM $PARAM{'CMSSDB'}.MID_ABNO_INCM_CACL_DTL
 	WHERE ABNO_INCM_CALC_BTCH = '$PARAM{'abno_incm_calc_btch'}'
 	AND SEC_EXCH_CDE = '0'
 	GROUP BY SEC_CDE, SEC_ACCT
@@ -815,7 +795,7 @@ FROM
   FROM
     (
       SELECT SEC_CDE, MIN(TRAD_DATE) MIN_TRAD_DATE, MAX(TRAD_DATE) MAX_TRAD_DATE 
-      FROM CMSSVIEW.SEC_QUOT
+      FROM $PARAM{'CMSSVIEW'}.SEC_QUOT
 	  WHERE SEC_EXCH_CDE = '0'
       GROUP BY SEC_CDE
     ) TA,
@@ -833,25 +813,64 @@ FROM
          WHERE IS_TRD_DT = '1' AND CALENDAR_DATE >= cast('$PARAM{'s_date'}' AS DATE format 'YYYYMMDD') 
        ) T2
     ) TB
-) TT1, CMSSVIEW.SEC_QUOT TT2, CMSSVIEW.SEC_QUOT TT3
+) TT1, $PARAM{'CMSSVIEW'}.SEC_QUOT TT2, $PARAM{'CMSSVIEW'}.SEC_QUOT TT3
 WHERE TT1.SEC_CDE = TT2.SEC_CDE
 AND TT1.SEC_CDE = TT3.SEC_CDE
 AND TT1.CALC_S_DATE = TT2.TRAD_DATE
 AND TT1.CALC_E_DATE = TT3.TRAD_DATE
 AND TT2.SEC_EXCH_CDE = '0'
 AND TT3.SEC_EXCH_CDE = '0'
-) T2, 
-NSPVIEW.ACT_SEC_HOLD_HIS T3, NSPVIEW.ACT_SEC_HOLD_HIS T4
-WHERE T1.SEC_CDE = T2.SEC_CDE
-AND T1.SEC_CDE = T3.SEC_CDE
-AND T1.SEC_CDE = T4.SEC_CDE
+) T2
+where
+T1.SEC_CDE = T2.SEC_CDE
+)
+SELECT
+    '0' AS SEC_EXCH_CDE,
+    SHDR_ACCT AS SEC_ACCT,
+    SEC_CDE AS SEC_CDE,
+    '9999' AS BIZ_TYPE,
+    0 AS TAX_FEE,
+    BUY_QTY AS BUY_VOL,
+    SAL_QTY AS SAL_VOL,
+    BUY_AMT AS BUY_AMT,
+    SAL_AMT AS SAL_AMT,
+    '$PARAM{'abno_incm_calc_btch'}' AS ABNO_INCM_CALC_BTCH
+FROM 
+(
+SELECT 
+ta.SEC_CDE, 
+ta.SEC_ACCT AS SHDR_ACCT,
+CASE WHEN end_hold_vol - start_hold_vol > ta.CHG_VOL THEN 
+	(end_hold_vol - start_hold_vol - Ta.CHG_VOL)  ELSE 0 END AS BUY_QTY,
+CASE WHEN end_hold_vol - start_hold_vol > ta.CHG_VOL THEN 
+	(end_hold_vol - start_hold_vol - Ta.CHG_VOL) * ta.calc_e_prc  ELSE 0 END AS BUY_AMT,
+CASE WHEN end_hold_vol - start_hold_vol < ta.CHG_VOL THEN 
+	(Ta.CHG_VOL - (END_HOLD_VOL - start_HOLD_VOL))  ELSE 0 END AS SAL_QTY,
+CASE WHEN end_hold_vol - start_hold_vol < ta.CHG_VOL THEN 
+	(Ta.CHG_VOL - (END_HOLD_VOL - start_HOLD_VOL)) * ta.calc_s_prc  ELSE 0 END AS SAL_AMT
+from
+(
+select t1.sec_cde, t1.sec_acct, t1.chg_vol, t1.calc_s_date, t1.calc_s_prc, t1.calc_e_date, t1.calc_e_prc, sum(t3.TD_END_HOLD_VOL) as start_HOLD_VOL
+from temp t1, NSPVIEW.ACT_SEC_HOLD_HIS T3
+WHERE T1.SEC_CDE = T3.SEC_CDE
 AND T1.SEC_ACCT = T3.SEC_ACCT_NBR
+AND T3.S_DATE <= T1.CALC_S_DATE
+AND T3.E_DATE > T1.CALC_S_DATE
+and t3.mkt_sort = '0'
+group  by 1,2,3,4,5,6,7
+) ta,
+(
+select t1.sec_cde, t1.sec_acct, sum(t4.TD_END_HOLD_VOL) as end_HOLD_VOL
+from temp t1, NSPVIEW.ACT_SEC_HOLD_HIS T4
+WHERE T1.SEC_CDE = T4.SEC_CDE
 AND T1.SEC_ACCT = T4.SEC_ACCT_NBR
-AND T3.S_DATE <= T2.CALC_S_DATE
-AND T3.E_DATE > T2.CALC_S_DATE
-AND T4.S_DATE <= T2.CALC_E_DATE
-AND T4.E_dATE > T2.CALC_E_DATE
-AND T3.MKT_SORT = '0'
+AND T4.S_DATE <= T1.CALC_E_DATE
+AND T4.E_DATE > T1.CALC_E_DATE
+and t4.mkt_sort = '0'
+group  by 1,2
+) tb
+where ta.sec_cde = tb.sec_cde
+and ta.sec_acct = tb.sec_acct
 ) RSLT
 ;
 

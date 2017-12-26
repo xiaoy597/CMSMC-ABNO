@@ -44,6 +44,10 @@ while (<$script_fh>) {
         print "Find cmss db declaration.\n";
         print $script_out_fh '$MAIN_PARAM{"CMSSDB"} = "WXHDATA";' . "\n";
     }
+    elsif ($line =~ /\$MAIN_PARAM\{'CMSSVIEW'\} =/) {
+        print "Find cmss view declaration.\n";
+        print $script_out_fh '$MAIN_PARAM{"CMSSVIEW"} = "WXHVIEW";' . "\n";
+    }
     elsif ($line =~ /\$MAIN_PARAM\{'TEMP_DB'\} =/) {
         print "Find temp db declaration.\n";
         print $script_out_fh '$MAIN_PARAM{"TEMP_DB"} = "WXHDATA";' . "\n";
