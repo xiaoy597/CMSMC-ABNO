@@ -3,12 +3,14 @@
   <component name="ChangeListManager">
     <list default="true" id="992c8d72-380c-463e-9306-d7d95ae9ba31" name="Default" comment="">
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/abno_incm.pl" afterPath="$PROJECT_DIR$/abno_incm.pl" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/build-release.pl" afterPath="$PROJECT_DIR$/build-release.pl" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/sql-template/abno_calc_final.sql" afterPath="$PROJECT_DIR$/sql-template/abno_calc_final.sql" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/sql-template/abno_calc_sse.sql" afterPath="$PROJECT_DIR$/sql-template/abno_calc_sse.sql" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/sql-template/abno_calc_szse.sql" afterPath="$PROJECT_DIR$/sql-template/abno_calc_szse.sql" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/sql-template/prepare-invst-from-file.sql" afterPath="$PROJECT_DIR$/sql-template/prepare-invst-from-file.sql" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/sql-template/prepare-invst-per-type.sql" afterPath="$PROJECT_DIR$/sql-template/prepare-invst-per-type.sql" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/sql-template/prepare-obj-a.sql" afterPath="$PROJECT_DIR$/sql-template/prepare-obj-a.sql" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/sql-template/prepare-obj-from-file.sql" afterPath="$PROJECT_DIR$/sql-template/prepare-obj-from-file.sql" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/sql-template/prepare-obj-mkt-lvl.sql" afterPath="$PROJECT_DIR$/sql-template/prepare-obj-mkt-lvl.sql" />
     </list>
     <ignored path="$PROJECT_DIR$/out/" />
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
@@ -24,8 +26,8 @@
       <file leaf-file-name="abno_incm.pl" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/abno_incm.pl">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="340">
-              <caret line="35" column="37" lean-forward="false" selection-start-line="35" selection-start-column="37" selection-end-line="35" selection-end-column="37" />
+            <state relative-caret-position="-34">
+              <caret line="31" column="39" lean-forward="true" selection-start-line="31" selection-start-column="39" selection-end-line="31" selection-end-column="39" />
               <folding>
                 <element signature="e#57#72#0#Perl5" expanded="true" />
               </folding>
@@ -956,7 +958,7 @@
       <workItem from="1513922437522" duration="3240000" />
       <workItem from="1514182916053" duration="904000" />
       <workItem from="1514185936881" duration="289000" />
-      <workItem from="1514263035252" duration="2694000" />
+      <workItem from="1514263035252" duration="5622000" />
     </task>
     <task id="LOCAL-00001" summary="Initial commit.">
       <created>1513158235903</created>
@@ -1070,11 +1072,18 @@
       <option name="project" value="LOCAL" />
       <updated>1514186224524</updated>
     </task>
-    <option name="localTasksCounter" value="17" />
+    <task id="LOCAL-00017" summary="Fix problems in SQL.">
+      <created>1514284872150</created>
+      <option name="number" value="00017" />
+      <option name="presentableId" value="LOCAL-00017" />
+      <option name="project" value="LOCAL" />
+      <updated>1514284872150</updated>
+    </task>
+    <option name="localTasksCounter" value="18" />
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="70304000" />
+    <option name="totallyTimeSpent" value="73232000" />
   </component>
   <component name="ToolWindowManager">
     <frame x="-8" y="-8" width="1382" height="744" extended-state="6" />
@@ -1134,11 +1143,16 @@
     <MESSAGE value="Use view from nsoview instead of table from nsodata in SQL." />
     <MESSAGE value="Add filter condition on MKT_SORT when selecting from ACT_SEC_HOLD_HIS." />
     <MESSAGE value="Add filter condition on SEC_EXCH_CDE when selecting from SEC_QUOT." />
-    <option name="LAST_COMMIT_MESSAGE" value="Add filter condition on SEC_EXCH_CDE when selecting from SEC_QUOT." />
+    <MESSAGE value="Fix problems in SQL." />
+    <option name="LAST_COMMIT_MESSAGE" value="Fix problems in SQL." />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager />
     <watches-manager />
+  </component>
+  <component name="antWorkspaceConfiguration">
+    <option name="IS_AUTOSCROLL_TO_SOURCE" value="false" />
+    <option name="FILTER_TARGETS" value="false" />
   </component>
   <component name="editorHistoryManager">
     <entry file="file://$PROJECT_DIR$/pz_file.pl">
@@ -1517,8 +1531,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/abno_incm.pl">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="340">
-          <caret line="35" column="37" lean-forward="false" selection-start-line="35" selection-start-column="37" selection-end-line="35" selection-end-column="37" />
+        <state relative-caret-position="-34">
+          <caret line="31" column="39" lean-forward="true" selection-start-line="31" selection-start-column="39" selection-end-line="31" selection-end-column="39" />
           <folding>
             <element signature="e#57#72#0#Perl5" expanded="true" />
           </folding>
