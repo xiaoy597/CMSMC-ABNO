@@ -59,60 +59,59 @@ DELETE FROM $PARAM{'CMSSDB'}.ABNO_INCM_CALC_RESULT
 WHERE ABNO_INCM_CALC_BTCH = '$PARAM{'abno_incm_calc_btch'}'
 ;
 
-INSERT INTO $PARAM{'CMSSDB'}.ABNO_INCM_CALC_RESULT
-with temp as (
-select t1.sec_cde, t1.sec_acct, t1.chg_vol, t2.calc_s_date, t2.calc_s_prc, t2.calc_e_date, t2.calc_e_prc
+CREATE VOLATILE MULTISET TABLE VT_SEC_ACCT_QUOT AS (
+SELECT 
+T1.SEC_CDE
+,T1.SEC_ACCT
+,T2.CALC_S_DATE
+,T2.CALC_S_PRC
+,T2.CALC_E_DATE
+,T2.CALC_E_PRC
 FROM
 (
 	SELECT
-		SEC_CDE
+		SEC_EXCH_CDE
+		,SEC_CDE
 		,SEC_ACCT
-		,SUM(BUY_VOL - SAL_VOL) AS CHG_VOL
 	FROM $PARAM{'CMSSDB'}.MID_ABNO_INCM_CACL_DTL
 	WHERE ABNO_INCM_CALC_BTCH = '$PARAM{'abno_incm_calc_btch'}'
-	GROUP BY SEC_CDE, SEC_ACCT
+	GROUP BY SEC_EXCH_CDE, SEC_CDE, SEC_ACCT
 ) T1, 
 (
-SELECT TT1.SEC_CDE, 
-TT1.CALC_S_DATE, 
-TT2.CLS_PRC AS CALC_S_PRC,
-TT1.CALC_E_DATE, 
-TT3.CLS_PRC AS CALC_E_PRC
-FROM
-(
-  SELECT SEC_CDE,
-  CASE WHEN MIN_TRAD_DATE > S_TRD_DATE THEN MIN_TRAD_DATE ELSE S_TRD_DATE END AS CALC_S_DATE,
-  CASE WHEN MAX_TRAD_DATE < E_TRD_DATE THEN MAX_TRAD_DATE ELSE E_TRD_DATE END AS CALC_E_DATE
-  FROM
-    (
-      SELECT SEC_CDE, MIN(TRAD_DATE) MIN_TRAD_DATE, MAX(TRAD_DATE) MAX_TRAD_DATE 
-      FROM $PARAM{'CMSSVIEW'}.SEC_QUOT
-	  WHERE SEC_EXCH_CDE = '0'
-      GROUP BY SEC_CDE
-    ) TA,
-    (
-      SELECT S_TRD_DATE, E_TRD_DATE
-      FROM
-      (
-         SELECT MAX(CALENDAR_DATE) AS E_TRD_DATE 
-         FROM NSOVIEW.TDSUM_DATE_EXCHANGE 
-         WHERE IS_TRD_DT = '1' AND CALENDAR_DATE <= cast('$PARAM{'e_date'}' AS DATE format 'YYYYMMDD') 
-       ) T1,
-       (
-         SELECT MIN(CALENDAR_DATE) AS S_TRD_DATE 
-         FROM NSOVIEW.TDSUM_DATE_EXCHANGE 
-         WHERE IS_TRD_DT = '1' AND CALENDAR_DATE >= cast('$PARAM{'s_date'}' AS DATE format 'YYYYMMDD') 
-       ) T2
-    ) TB
-) TT1, $PARAM{'CMSSVIEW'}.SEC_QUOT TT2, $PARAM{'CMSSVIEW'}.SEC_QUOT TT3
-WHERE TT1.SEC_CDE = TT2.SEC_CDE
-AND TT1.SEC_CDE = TT3.SEC_CDE
-AND TT1.CALC_S_DATE = TT2.TRAD_DATE
-AND TT1.CALC_E_DATE = TT3.TRAD_DATE
+	SELECT 
+		TT1.SEC_EXCH_CDE,
+		TT1.SEC_CDE, 
+		TT1.CALC_S_DATE, 
+		TT2.CLS_PRC AS CALC_S_PRC,
+		TT1.CALC_E_DATE, 
+		TT3.CLS_PRC AS CALC_E_PRC
+	FROM
+	(
+		SELECT SEC_EXCH_CDE,
+		SEC_CDE,
+		MIN(TRAD_DATE) AS CALC_S_DATE,
+		MAX(TRAD_DATE) AS CALC_E_DATE
+		FROM $PARAM{'CMSSVIEW'}.SEC_QUOT
+		WHERE TRAD_DATE >= CAST('$PARAM{'s_date'}' AS DATE FORMAT 'YYYYMMDD')
+		AND TRAD_DATE <= CAST('$PARAM{'e_date'}' AS DATE FORMAT 'YYYYMMDD')
+		GROUP BY SEC_EXCH_CDE, SEC_CDE
+	) TT1, $PARAM{'CMSSVIEW'}.SEC_QUOT TT2, $PARAM{'CMSSVIEW'}.SEC_QUOT TT3
+	WHERE TT1.SEC_CDE = TT2.SEC_CDE
+	AND TT1.SEC_CDE = TT3.SEC_CDE
+	AND TT1.CALC_S_DATE = TT2.TRAD_DATE
+	AND TT1.CALC_E_DATE = TT3.TRAD_DATE
+	AND TT1.SEC_EXCH_CDE = TT2.SEC_EXCH_CDE
+	AND TT1.SEC_EXCH_CDE = TT3.SEC_EXCH_CDE
 ) T2
-where
+WHERE
 T1.SEC_CDE = T2.SEC_CDE
-)
+AND T1.SEC_EXCH_CDE = T2.SEC_EXCH_CDE
+) WITH DATA UNIQUE PRIMARY INDEX (SEC_CDE, SEC_ACCT)
+ON COMMIT PRESERVE ROWS
+;
+
+
+INSERT INTO $PARAM{'CMSSDB'}.ABNO_INCM_CALC_RESULT
 SELECT
 TB1.SEC_EXCH_CDE AS SEC_EXCH_CDE
 ,TB1.SEC_ACCT AS SEC_ACCT
@@ -124,8 +123,8 @@ TB1.SEC_EXCH_CDE AS SEC_EXCH_CDE
 ,CASE WHEN TB5.OAP_ACCT_NBR IS NOT NULL THEN '1' ELSE '0' END AS IS_ODS
 ,CASE WHEN TB7.OAP_ACCT_NBR IS NOT NULL THEN '1' ELSE '0' END AS IS_TOP10_SHDR
 ,CASE WHEN TB6.SHDR_ACCT IS NOT NULL THEN '1' ELSE '0' END AS IS_LIFT_BAN_LMT_SHDR
-,TB4.START_BAL AS START_HLD_MKT_VAL
-,TB4.END_BAL AS END_HLD_MKT_VAL
+,COALESCE(TB41.START_BAL, 0) AS START_HLD_MKT_VAL
+,COALESCE(TB42.END_BAL, 0) AS END_HLD_MKT_VAL
 ,SUM(BUY_AMT) AS BUY_AMT
 ,SUM(SAL_AMT) AS SAL_AMT
 ,SUM(CASE WHEN BIZ_TYPE = '2000' THEN SAL_AMT ELSE 0 END) AS NON_TRAD_TRAN_INCM_AMT
@@ -134,7 +133,9 @@ TB1.SEC_EXCH_CDE AS SEC_EXCH_CDE
 ,SUM(CASE WHEN BIZ_TYPE = '4004' THEN SAL_AMT ELSE 0 END) AS CASH_DVD
 ,SUM(TAX_FEE) AS TAX_FEE
 ,SUM((BUY_AMT+SAL_AMT) * TB8.CMSN_ABTM) AS CMSN
-,SUM(SAL_AMT-BUY_AMT) AS BRKV_AMT
+,SUM(SAL_AMT-BUY_AMT)
+	+ (COALESCE(TB42.END_BAL, 0) - COALESCE(TB41.START_BAL, 0))
+	- SUM(TAX_FEE) - SUM((BUY_AMT+SAL_AMT) * TB8.CMSN_ABTM) AS BRKV_AMT
 ,TB8.ABNO_INCM_CALC_BTCH AS ABNO_INCM_CALC_BTCH
 FROM
 (
@@ -145,9 +146,17 @@ inner join $PARAM{'CMSSDB'}.ABNO_INCM_CALC_LOG tb8
 on tb1.ABNO_INCM_CALC_BTCH = tb8.ABNO_INCM_CALC_BTCH
 inner join 
 (
-    select * from NsoVIEW.CSDC_INTG_SEC_ACCT
-    where s_date <= CAST('$PARAM{'e_date'}' AS DATE FORMAT 'YYYYMMDD') 
-    and e_date > CAST('$PARAM{'e_date'}' AS DATE FORMAT 'YYYYMMDD') 
+    select a.oap_acct_nbr, a.sec_acct, a.sec_acct_name 
+	from NsoVIEW.CSDC_INTG_SEC_ACCT a,
+		(select sec_acct, max(s_date) as s_date
+			from NsoVIEW.CSDC_INTG_SEC_ACCT
+			where e_date > CAST('$PARAM{'s_date'}' AS DATE FORMAT 'YYYYMMDD')
+			group by sec_acct
+		) b
+    where 
+    a.e_date > CAST('$PARAM{'s_date'}' AS DATE FORMAT 'YYYYMMDD')
+	and a.s_date = b.s_date
+	and a.sec_acct = b.sec_acct
 ) tb2
 on tb1.sec_acct = tb2.sec_acct
 left outer join 
@@ -157,38 +166,30 @@ left outer join
     and e_date > CAST('$PARAM{'e_date'}' AS DATE FORMAT 'YYYYMMDD') 
 ) tb3
 on tb1.sec_acct = tb3.SEC_ACCT_NBR
-inner join
-(
---------- 期初、期末持有市值 ----------------------------------------------------
-SELECT 
-ta.SEC_CDE, 
-ta.SEC_ACCT AS sec_acct,
-start_hold_vol * calc_s_prc as start_bal,
-end_hold_vol * calc_e_prc as end_bal
-from
-(
-select t1.sec_cde, t1.sec_acct, t1.chg_vol, t1.calc_s_date, t1.calc_s_prc, t1.calc_e_date, t1.calc_e_prc, sum(t3.TD_END_HOLD_VOL) as start_HOLD_VOL
-from temp t1, NSPVIEW.ACT_SEC_HOLD_HIS T3
-WHERE T1.SEC_CDE = T3.SEC_CDE
-AND T1.SEC_ACCT = T3.SEC_ACCT_NBR
-AND T3.S_DATE <= T1.CALC_S_DATE
-AND T3.E_DATE > T1.CALC_S_DATE
-group  by 1,2,3,4,5,6,7
-) ta,
-(
-select t1.sec_cde, t1.sec_acct, sum(t4.TD_END_HOLD_VOL) as end_HOLD_VOL
-from temp t1, NSPVIEW.ACT_SEC_HOLD_HIS T4
-WHERE T1.SEC_CDE = T4.SEC_CDE
-AND T1.SEC_ACCT = T4.SEC_ACCT_NBR
-AND T4.S_DATE <= T1.CALC_E_DATE
-AND T4.E_DATE > T1.CALC_E_DATE
-group  by 1,2
-) tb
-where ta.sec_cde = tb.sec_cde
-and ta.sec_acct = tb.sec_acct
-) tb4
-on tb1.sec_acct = tb4.sec_acct
-and tb1.sec_cde = tb4.sec_cde
+left outer join
+( -- 期初市值
+	select t1.sec_cde, t1.sec_acct, sum(t1.calc_s_prc * t3.TD_END_HOLD_VOL) as start_bal
+	from VT_SEC_ACCT_QUOT t1, NSPVIEW.ACT_SEC_HOLD_HIS T3
+	WHERE T1.SEC_CDE = T3.SEC_CDE
+	AND T1.SEC_ACCT = T3.SEC_ACCT_NBR
+	AND T3.S_DATE <= T1.CALC_S_DATE
+	AND T3.E_DATE > T1.CALC_S_DATE
+	group  by 1,2
+) tb41
+on tb1.sec_acct = tb41.sec_acct
+and tb1.sec_cde = tb41.sec_cde
+left outer join
+( -- 期末市值
+	select t1.sec_cde, t1.sec_acct, sum(t1.calc_e_prc * t4.TD_END_HOLD_VOL) as end_bal
+	from VT_SEC_ACCT_QUOT t1, NSPVIEW.ACT_SEC_HOLD_HIS T4
+	WHERE T1.SEC_CDE = T4.SEC_CDE
+	AND T1.SEC_ACCT = T4.SEC_ACCT_NBR
+	AND T4.S_DATE <= T1.CALC_E_DATE
+	AND T4.E_DATE > T1.CALC_E_DATE
+	group  by 1,2
+) tb42
+on tb1.sec_acct = tb42.sec_acct
+and tb1.sec_cde = tb42.sec_cde
 left outer join
 (
       ----高管名单（估算）--------------------------------------------------------------------  
