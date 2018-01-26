@@ -1,16 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="992c8d72-380c-463e-9306-d7d95ae9ba31" name="Default" comment="">
+    <list default="true" id="992c8d72-380c-463e-9306-d7d95ae9ba31" name="Default" comment="Fix problems in SQL.">
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/sql-template/abno_calc_final.sql" afterPath="$PROJECT_DIR$/sql-template/abno_calc_final.sql" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/sql-template/abno_calc_sse.sql" afterPath="$PROJECT_DIR$/sql-template/abno_calc_sse.sql" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/sql-template/abno_calc_szse.sql" afterPath="$PROJECT_DIR$/sql-template/abno_calc_szse.sql" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/sql-template/prepare-invst-from-file.sql" afterPath="$PROJECT_DIR$/sql-template/prepare-invst-from-file.sql" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/sql-template/prepare-invst-per-type.sql" afterPath="$PROJECT_DIR$/sql-template/prepare-invst-per-type.sql" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/sql-template/prepare-obj-a.sql" afterPath="$PROJECT_DIR$/sql-template/prepare-obj-a.sql" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/sql-template/prepare-obj-from-file.sql" afterPath="$PROJECT_DIR$/sql-template/prepare-obj-from-file.sql" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/sql-template/prepare-obj-mkt-lvl.sql" afterPath="$PROJECT_DIR$/sql-template/prepare-obj-mkt-lvl.sql" />
     </list>
     <ignored path="$PROJECT_DIR$/out/" />
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
@@ -23,11 +16,11 @@
   <component name="ExecutionTargetManager" SELECTED_TARGET="default_target" />
   <component name="FileEditorManager">
     <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
-      <file leaf-file-name="abno_incm.pl" pinned="false" current-in-tab="true">
+      <file leaf-file-name="abno_incm.pl" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/abno_incm.pl">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="-34">
-              <caret line="31" column="39" lean-forward="true" selection-start-line="31" selection-start-column="39" selection-end-line="31" selection-end-column="39" />
+            <state relative-caret-position="1003">
+              <caret line="60" column="15" lean-forward="false" selection-start-line="60" selection-start-column="15" selection-end-line="60" selection-end-column="15" />
               <folding>
                 <element signature="e#57#72#0#Perl5" expanded="true" />
               </folding>
@@ -35,11 +28,11 @@
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="build-release.pl" pinned="false" current-in-tab="false">
+      <file leaf-file-name="build-release.pl" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/build-release.pl">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="438">
-              <caret line="48" column="51" lean-forward="false" selection-start-line="48" selection-start-column="51" selection-end-line="48" selection-end-column="51" />
+            <state relative-caret-position="-123">
+              <caret line="18" column="53" lean-forward="false" selection-start-line="18" selection-start-column="53" selection-end-line="18" selection-end-column="53" />
               <folding>
                 <element signature="e#57#72#0#Perl5" expanded="true" />
               </folding>
@@ -64,6 +57,8 @@
       <find>Write</find>
       <find>STDERR</find>
       <find>SCRIPT_DIR</find>
+      <find>env</find>
+      <find>get_job_info</find>
     </findStrings>
     <replaceStrings>
       <replace>load-file</replace>
@@ -118,7 +113,6 @@
       <foldersAlwaysOnTop value="true" />
     </navigator>
     <panes>
-      <pane id="Scope" />
       <pane id="ProjectPane">
         <subPane>
           <PATH>
@@ -147,6 +141,7 @@
           </PATH>
         </subPane>
       </pane>
+      <pane id="Scope" />
       <pane id="PackagesPane" />
       <pane id="Scratches" />
     </panes>
@@ -154,8 +149,8 @@
   <component name="PropertiesComponent">
     <property name="WebServerToolWindowFactoryState" value="false" />
     <property name="aspect.path.notification.shown" value="true" />
-    <property name="last_opened_file_path" value="$PROJECT_DIR$/build-release.pl" />
-    <property name="settings.editor.selected.configurable" value="PERL5_MAIN_SETTINGS" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$" />
+    <property name="settings.editor.selected.configurable" value="preferences.pluginManager" />
   </component>
   <component name="RecentsManager">
     <key name="MoveFile.RECENT_KEYS">
@@ -958,7 +953,19 @@
       <workItem from="1513922437522" duration="3240000" />
       <workItem from="1514182916053" duration="904000" />
       <workItem from="1514185936881" duration="289000" />
-      <workItem from="1514263035252" duration="5622000" />
+      <workItem from="1514263035252" duration="6399000" />
+      <workItem from="1514833570323" duration="537000" />
+      <workItem from="1514863407024" duration="829000" />
+      <workItem from="1514945875021" duration="23000" />
+      <workItem from="1514964266617" duration="2900000" />
+      <workItem from="1515145682749" duration="387000" />
+      <workItem from="1515374772965" duration="698000" />
+      <workItem from="1516339610652" duration="686000" />
+      <workItem from="1516351194828" duration="646000" />
+      <workItem from="1516697515254" duration="3637000" />
+      <workItem from="1516755039723" duration="1120000" />
+      <workItem from="1516874119489" duration="914000" />
+      <workItem from="1516955661494" duration="600000" />
     </task>
     <task id="LOCAL-00001" summary="Initial commit.">
       <created>1513158235903</created>
@@ -1079,15 +1086,35 @@
       <option name="project" value="LOCAL" />
       <updated>1514284872150</updated>
     </task>
-    <option name="localTasksCounter" value="18" />
+    <task id="LOCAL-00018" summary="Fix problems in SQL.">
+      <created>1514362565007</created>
+      <option name="number" value="00018" />
+      <option name="presentableId" value="LOCAL-00018" />
+      <option name="project" value="LOCAL" />
+      <updated>1514362565007</updated>
+    </task>
+    <task id="LOCAL-00019" summary="Fix problems in SQL.">
+      <created>1515146009976</created>
+      <option name="number" value="00019" />
+      <option name="presentableId" value="LOCAL-00019" />
+      <option name="project" value="LOCAL" />
+      <updated>1515146009976</updated>
+    </task>
+    <task id="LOCAL-00020" summary="Fix problems in SQL.">
+      <created>1516874390214</created>
+      <option name="number" value="00020" />
+      <option name="presentableId" value="LOCAL-00020" />
+      <option name="project" value="LOCAL" />
+      <updated>1516874390214</updated>
+    </task>
+    <option name="localTasksCounter" value="21" />
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="73232000" />
+    <option name="totallyTimeSpent" value="86986000" />
   </component>
   <component name="ToolWindowManager">
     <frame x="-8" y="-8" width="1382" height="744" extended-state="6" />
-    <editor active="true" />
     <layout>
       <window_info id="Palette" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
       <window_info id="TODO" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
@@ -1098,12 +1125,12 @@
       <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.329653" sideWeight="0.5" order="7" side_tool="true" content_ui="tabs" />
       <window_info id="Maven Projects" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
       <window_info id="Version Control" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
-      <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.30126184" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
+      <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.30126184" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
       <window_info id="Properties" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
       <window_info id="Terminal" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="Capture Tool" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
       <window_info id="Designer" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
-      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.24963397" sideWeight="0.5" order="0" side_tool="false" content_ui="combo" />
+      <window_info id="Project" active="true" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.24963397" sideWeight="0.5" order="0" side_tool="false" content_ui="combo" />
       <window_info id="Database" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
       <window_info id="Structure" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
       <window_info id="Ant Build" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
@@ -1155,13 +1182,6 @@
     <option name="FILTER_TARGETS" value="false" />
   </component>
   <component name="editorHistoryManager">
-    <entry file="file://$PROJECT_DIR$/pz_file.pl">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="2312">
-          <caret line="136" column="21" lean-forward="false" selection-start-line="136" selection-start-column="21" selection-end-line="136" selection-end-column="21" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/pz_invst_cls.pl">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="1156">
@@ -1519,20 +1539,27 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/build-release.pl">
+    <entry file="file://$PROJECT_DIR$/sql-template/prepare-invst-per-type.sql">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="438">
-          <caret line="48" column="51" lean-forward="false" selection-start-line="48" selection-start-column="51" selection-end-line="48" selection-end-column="51" />
+        <state relative-caret-position="0">
+          <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/abno_incm.pl">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="1003">
+          <caret line="60" column="15" lean-forward="false" selection-start-line="60" selection-start-column="15" selection-end-line="60" selection-end-column="15" />
           <folding>
             <element signature="e#57#72#0#Perl5" expanded="true" />
           </folding>
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/abno_incm.pl">
+    <entry file="file://$PROJECT_DIR$/build-release.pl">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-34">
-          <caret line="31" column="39" lean-forward="true" selection-start-line="31" selection-start-column="39" selection-end-line="31" selection-end-column="39" />
+        <state relative-caret-position="-123">
+          <caret line="18" column="53" lean-forward="false" selection-start-line="18" selection-start-column="53" selection-end-line="18" selection-end-column="53" />
           <folding>
             <element signature="e#57#72#0#Perl5" expanded="true" />
           </folding>

@@ -278,7 +278,7 @@ from (
                        AND cast('$PARAM{'e_date'}' as DATE format 'YYYYMMDD')
     and substr(cast(1000000+b.sec_cde as char(7)),2) = d.SEC_CDE
     and b.TRANS_DATE = a.TRAD_DATE
-    and b.SEC_CDE = d.SEC_CDE
+    and a.SEC_CDE = d.SEC_CDE
     and b.in_acct = c.sec_acct
 	and a.SEC_EXCH_CDE = '0'
    group by 1,2,3
