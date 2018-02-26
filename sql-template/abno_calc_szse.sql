@@ -684,6 +684,7 @@ FROM
 	FROM $PARAM{'CMSSDB'}.MID_ABNO_INCM_CACL_DTL
 	WHERE ABNO_INCM_CALC_BTCH = '$PARAM{'abno_incm_calc_btch'}'
 	AND SEC_EXCH_CDE = '1'
+	AND BIZ_TYPE<> '9999'
 	GROUP BY SEC_EXCH_CDE, SEC_CDE, SEC_ACCT
 ) T1, 
 (
@@ -730,8 +731,8 @@ SELECT
 FROM 
 (
 SELECT 
-ta.SEC_CDE, 
-ta.SEC_ACCT AS SHDR_ACCT,
+COALESCE(ta.SEC_CDE,tb.SEC_CDE) AS SEC_CDE,
+COALESCE(ta.SEC_ACCT,tb.SEC_ACCT) AS SHDR_ACCT,
 CASE WHEN end_hold_vol - start_hold_vol > ta.CHG_VOL THEN 
 	(end_hold_vol - start_hold_vol - Ta.CHG_VOL)  ELSE 0 END AS BUY_QTY,
 CASE WHEN end_hold_vol - start_hold_vol > ta.CHG_VOL THEN 
@@ -750,7 +751,8 @@ AND T3.S_DATE <= T1.CALC_S_DATE
 AND T3.E_DATE > T1.CALC_S_DATE
 and t3.mkt_sort = '1'
 group  by 1,2,3,4,5,6,7
-) ta,
+) ta
+FULL JOIN 
 (
 select t1.sec_cde, t1.sec_acct, sum(t4.TD_END_HOLD_VOL) as end_HOLD_VOL
 from temp t1, NSPVIEW.ACT_SEC_HOLD_HIS T4
@@ -761,9 +763,11 @@ AND T4.E_DATE > T1.CALC_E_DATE
 and t4.mkt_sort = '1'
 group  by 1,2
 ) tb
-where ta.sec_cde = tb.sec_cde
+ON ta.sec_cde = tb.sec_cde
 and ta.sec_acct = tb.sec_acct
 ) RSLT
+where BUY_QTY<> 0 
+or SAL_QTY<>0
 ;
 
 .IF ERRORCODE <> 0 THEN .QUIT 12;
