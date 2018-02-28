@@ -730,17 +730,17 @@ SELECT
     '$PARAM{'abno_incm_calc_btch'}' AS ABNO_INCM_CALC_BTCH
 FROM 
 (
-SELECT 
+SELECT
 COALESCE(ta.SEC_CDE,tb.SEC_CDE) AS SEC_CDE,
 COALESCE(ta.SEC_ACCT,tb.SEC_ACCT) AS SHDR_ACCT,
-CASE WHEN end_hold_vol - start_hold_vol > ta.CHG_VOL THEN 
-	(end_hold_vol - start_hold_vol - Ta.CHG_VOL)  ELSE 0 END AS BUY_QTY,
-CASE WHEN end_hold_vol - start_hold_vol > ta.CHG_VOL THEN 
-	(end_hold_vol - start_hold_vol - Ta.CHG_VOL) * ta.calc_e_prc  ELSE 0 END AS BUY_AMT,
-CASE WHEN end_hold_vol - start_hold_vol < ta.CHG_VOL THEN 
-	(Ta.CHG_VOL - (END_HOLD_VOL - start_HOLD_VOL))  ELSE 0 END AS SAL_QTY,
-CASE WHEN end_hold_vol - start_hold_vol < ta.CHG_VOL THEN 
-	(Ta.CHG_VOL - (END_HOLD_VOL - start_HOLD_VOL)) * ta.calc_s_prc  ELSE 0 END AS SAL_AMT
+CASE WHEN zeroifnull(end_hold_vol) - zeroifnull(start_hold_vol) > coalesce(ta.CHG_VOL, tb.CHG_VOL) THEN
+	(zeroifnull(end_hold_vol) - zeroifnull(start_hold_vol) - coalesce(ta.CHG_VOL, tb.CHG_VOL))  ELSE 0 END AS BUY_QTY,
+CASE WHEN zeroifnull(end_hold_vol) - zeroifnull(start_hold_vol) > coalesce(ta.CHG_VOL, tb.CHG_VOL) THEN
+	(zeroifnull(end_hold_vol) - zeroifnull(start_hold_vol) - coalesce(ta.CHG_VOL, tb.CHG_VOL)) * coalesce(ta.calc_e_prc, tb.calc_e_prc)  ELSE 0 END AS BUY_AMT,
+CASE WHEN zeroifnull(end_hold_vol) - zeroifnull(start_hold_vol) < coalesce(ta.CHG_VOL, tb.CHG_VOL) THEN
+	(coalesce(ta.CHG_VOL, tb.CHG_VOL) - (zeroifnull(end_hold_vol) - zeroifnull(start_hold_vol)))  ELSE 0 END AS SAL_QTY,
+CASE WHEN zeroifnull(end_hold_vol) - zeroifnull(start_hold_vol) < coalesce(ta.CHG_VOL, tb.CHG_VOL) THEN
+	(coalesce(ta.CHG_VOL, tb.CHG_VOL) - (zeroifnull(end_hold_vol) - zeroifnull(start_hold_vol))) * coalesce(ta.calc_s_prc, tb.calc_s_prc)  ELSE 0 END AS SAL_AMT
 from
 (
 select t1.sec_cde, t1.sec_acct, t1.chg_vol, t1.calc_s_date, t1.calc_s_prc, t1.calc_e_date, t1.calc_e_prc, sum(t3.TD_END_HOLD_VOL) as start_HOLD_VOL
@@ -754,14 +754,14 @@ group  by 1,2,3,4,5,6,7
 ) ta
 FULL JOIN 
 (
-select t1.sec_cde, t1.sec_acct, sum(t4.TD_END_HOLD_VOL) as end_HOLD_VOL
+select t1.sec_cde, t1.sec_acct, t1.chg_vol, t1.calc_s_date, t1.calc_s_prc, t1.calc_e_date, t1.calc_e_prc, sum(t4.TD_END_HOLD_VOL) as end_HOLD_VOL
 from temp t1, NSPVIEW.ACT_SEC_HOLD_HIS T4
 WHERE T1.SEC_CDE = T4.SEC_CDE
 AND T1.SEC_ACCT = T4.SEC_ACCT_NBR
 AND T4.S_DATE <= T1.CALC_E_DATE
 AND T4.E_DATE > T1.CALC_E_DATE
 and t4.mkt_sort = '1'
-group  by 1,2
+group  by 1,2,3,4,5,6,7
 ) tb
 ON ta.sec_cde = tb.sec_cde
 and ta.sec_acct = tb.sec_acct

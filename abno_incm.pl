@@ -3,6 +3,8 @@ use strict;
 use warnings FATAL => 'all';
 use File::Path;
 use Time::localtime;
+use common_module qw(passport_decrypt);
+use Config::IniFiles;
 
 END {
     # Executed before program exits.
@@ -29,9 +31,19 @@ my $LOG_DIR = "$CMSS_HOME/logs";
 my %MAIN_PARAM = ();
 my %JOB_PARAM = ();
 
-$MAIN_PARAM{"HOSTNM"} = "10.97.10.200";
-$MAIN_PARAM{"USERNM"} = "xiaoy";
-$MAIN_PARAM{"PASSWD"} = "CMSS2017";
+if (!defined($ENV{'CMSS_DEBUG'})) {
+    my $cfg = Config::IniFiles->new(-file => "$CMSS_HOME/CMSMC-ABNO.ini");
+
+    $MAIN_PARAM{"HOSTNM"} = $cfg->val('user_cfg', 'db_host');
+    $MAIN_PARAM{"USERNM"} = $cfg->val('user_cfg', 'db_user');
+    $MAIN_PARAM{"PASSWD"} = passport_decrypt($cfg->val('user_cfg', 'db_pw'));
+}
+else {
+    $MAIN_PARAM{"HOSTNM"} = "10.97.10.200";
+    $MAIN_PARAM{"USERNM"} = "xiaoy";
+    $MAIN_PARAM{"PASSWD"} = "CMSS2017";
+}
+
 $MAIN_PARAM{'CMSSDB'} = "CMSSDATA";
 $MAIN_PARAM{'CMSSVIEW'} = "CMSSVIEW";
 $MAIN_PARAM{'TEMP_DB'} = 'CMSSTEMP';
@@ -101,12 +113,12 @@ sub perform_abno_calc() {
         $PARAM{$k} = $JOB_PARAM{$k};
     }
 
-    if (index($JOB_PARAM{'sec_exch_cde'}, "0") >= 0){
+    if (index($JOB_PARAM{'sec_exch_cde'}, "0") >= 0) {
         print "\nAbnormal income calculation for SSE securities ...\n";
         run_update("abno_calc_sse.sql", %PARAM);
     }
 
-    if (index($JOB_PARAM{'sec_exch_cde'}, "1") >= 0){
+    if (index($JOB_PARAM{'sec_exch_cde'}, "1") >= 0) {
         print "\nAbnormal income calculation for SZSE securities ...\n";
         run_update("abno_calc_szse.sql", %PARAM);
     }
