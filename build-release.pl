@@ -17,11 +17,13 @@ my $release_dir = "target/release-$time";
 mkpath($release_dir);
 
 dircopy('sql-template', "$release_dir/sql-template");
+#dircopy('perl-env', "$release_dir/perl-env");
 
 copy('abno_incm.pl', "$release_dir/abno_incm.pl");
 copy('abno_ddl.sql', "$release_dir/abno_ddl.sql");
 copy('CMSMC-ABNO.ini', "$release_dir/CMSMC-ABNO.ini");
 copy('INSTALL.txt', "$release_dir/INSTALL.txt");
+
 
 open(my $script_fh, "$release_dir/abno_incm.pl") or die "Can not open abno_incm.pl for processing.";
 

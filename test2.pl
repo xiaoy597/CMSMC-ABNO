@@ -4,4 +4,12 @@ use warnings FATAL => 'all';
 
 my @a = ();
 
-print $#a;
+our $v1 = "abcd";
+
+sub func1 {
+    print $v1 . "\n";
+}
+
+print $#a . "\n";
+
+func1;

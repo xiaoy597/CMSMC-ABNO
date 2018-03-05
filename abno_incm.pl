@@ -25,11 +25,11 @@ else {
 }
 
 my $WORK_DIR = "$CMSS_HOME/tmp";
-my $SCRIPT_DIR = "$CMSS_HOME/sql-template";
+our $SCRIPT_DIR = "$CMSS_HOME/sql-template";
 my $LOG_DIR = "$CMSS_HOME/logs";
 
-my %MAIN_PARAM = ();
-my %JOB_PARAM = ();
+our %MAIN_PARAM = ();
+our %JOB_PARAM = ();
 
 if (!defined($ENV{'CMSS_DEBUG'})) {
     my $cfg = Config::IniFiles->new(-file => "$CMSS_HOME/CMSMC-ABNO.ini");
@@ -50,7 +50,7 @@ $MAIN_PARAM{'TEMP_DB'} = 'CMSSTEMP';
 $MAIN_PARAM{'LOAD_TEMPLATE_TBL'} = 'abno_fastld';
 $MAIN_PARAM{"BATCH_NBR"} = $ARGV[0];
 
-my $LOG_FILE = "$LOG_DIR/abno_$MAIN_PARAM{'BATCH_NBR'}.log";
+our $LOG_FILE = "$LOG_DIR/abno_$MAIN_PARAM{'BATCH_NBR'}.log";
 
 my $job_sts;
 
@@ -89,7 +89,7 @@ sub main {
     # 设置作业运行状态为成功
     $job_sts = '1';
 
-    print "\nAbnormal income calculation finished successfully at " . getTime("yyyy-mm-dd hh:mi:ss") . "\n";
+    print "\nAbnormal income calculation finished successfully at " . getMyTime("yyyy-mm-dd hh:mi:ss") . "\n";
 
 }
 
@@ -221,7 +221,7 @@ sub quote_values() {
 
 sub openLog {
 
-    my $START_TIME = getTime("yyyy-mm-dd hh:mi:ss");
+    my $START_TIME = getMyTime("yyyy-mm-dd hh:mi:ss");
 
     open(STDOUT, ">$LOG_FILE")
         or die "Can not redirect STDOUT to $LOG_FILE";
@@ -343,7 +343,7 @@ sub run_update() {
 }
 
 #取系统时间
-sub getTime {
+sub getMyTime {
 
     my ($ret) = @_;            #获取时间格式
 

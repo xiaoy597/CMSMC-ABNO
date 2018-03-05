@@ -9,3 +9,12 @@
 
 4、执行abno-ddl.sql创建异常收益计算需要的表。
 
+
+Perl执行环境设置
+===============
+
+1、将td_perl.tar.gz展开到/opt目录下。
+2、在执行Perl脚本的用户环境中设置环境变量，
+    export PATH=/opt/td_perl/bin:$PATH
+3、退出登录并重新登入。
+
